@@ -44,7 +44,7 @@
         </template>
       </b-table>
       <b-row class="overflow-auto">
-        <!--<b-pagination
+        <!---<b-pagination
           v-model="currentPage"
           :total-rows="totalRows"
           :per-page="perPage"
@@ -99,19 +99,17 @@
           </b-form-group>
         </b-form-row>
 
-        <ValidationProvider rules="required" v-slot="{ errors }">
-          <b-form-row>
-            <b-form-group label="Date de commande" label-for="Date de commande">
-              <b-form-input
-                id="date_commande"
-                name="date_commande"
-                type="date"
-                v-model="form.dateCommande"
-              ></b-form-input>
-              <span id="error">{{ errors[0] }}</span>
-            </b-form-group>
-          </b-form-row>
-        </ValidationProvider>
+        <b-form-row>
+          <b-form-group label="Date de commande" label-for="Date de commande">
+            <b-form-input
+              id="date_commande"
+              name="date_commande"
+              type="date"
+              v-model="form.dateCommande"
+              required
+            ></b-form-input>
+          </b-form-group>
+        </b-form-row>
 
         <b-form-row>
           <b-form-group
@@ -122,36 +120,44 @@
               id="numero"
               name="numero"
               v-model="form.numero"
+              required
             ></b-form-input>
           </b-form-group>
         </b-form-row>
+
         <b-form-row>
           <b-form-group label="Nom client" label-for="Nom client">
             <b-form-input
               id="nom_client"
               name="nom_client"
               v-model="form.nomClient"
+              required
             ></b-form-input>
           </b-form-group>
         </b-form-row>
+
         <b-form-row>
           <b-form-group label="Prénom client" label-for="Prénom client">
             <b-form-input
               id="prenom_client"
               name="prenom_client"
               v-model="form.prenomClient"
+              required
             ></b-form-input>
           </b-form-group>
         </b-form-row>
+
         <b-form-row>
-          <b-form-group label="adresse livaison" label-for="adresse livraison">
+          <b-form-group label="adresse livraison" label-for="adresse livraison">
             <b-form-input
               id="adresse_livaison"
-              name="adresse livaison"
+              name="adresse_livaison"
               v-model="form.adresseLivraison1"
+              required
             ></b-form-input>
           </b-form-group>
         </b-form-row>
+
         <b-form-row>
           <b-form-group
             label="adresse complément"
@@ -164,21 +170,25 @@
             ></b-form-input>
           </b-form-group>
         </b-form-row>
+
         <b-form-row>
           <b-form-group label="ville livraison" label-for="ville livraison">
             <b-form-input
               id="ville"
-              name="ville"
+              name="ville_livraison"
               v-model="form.ville"
+              required
             ></b-form-input>
           </b-form-group>
         </b-form-row>
+
         <b-form-row>
           <b-form-group label="code postal" label-for="code postal">
             <b-form-input
               id="code_postal"
-              name="codePostal"
+              name="code_postal"
               v-model="form.codePostal"
+              required
             ></b-form-input>
           </b-form-group>
         </b-form-row>
@@ -191,11 +201,9 @@
 // @ is an alias to /src
 
 import axios from "axios";
-import { ValidationProvider } from "vee-validate";
 
 export default {
   name: "Acceuil",
-  components: { ValidationProvider },
   mounted() {
     this.listCommands();
   },
@@ -277,9 +285,14 @@ export default {
     getOneCommande(num) {
       if (num !== undefined) {
         axios
-          .get("commande/one/" + num)
+          .get(`commande/one/${num}`)
           .then((response) => (this.form = response.data))
           .catch((error) => this.makeToast(error, "Erreur"));
+      }
+    },
+    getAddCommande() {
+      if (this.form !== {}) {
+        axios.post("commande/add", this.form).then().catch();
       }
     },
     onFiltered() {},
@@ -297,7 +310,9 @@ export default {
     },
     handleSubmit() {
       // Push the name to submitted names
-      this.submittedNames.push(this.name);
+      //this.submittedNames.push(this.name);
+      console.log("adresse 1", this.form.adresseLivraison1);
+      //this.getAddCommande();
       // Hide the modal manually
       this.$nextTick(() => {
         this.$refs.commande.hide();
