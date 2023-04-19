@@ -2,6 +2,7 @@
   <div>
     <b-row>
       <b-table
+        ref="formulaire"
         :items="items"
         :fields="fields"
         :current-page="currentPage"
@@ -44,7 +45,7 @@
         </template>
       </b-table>
       <b-row class="overflow-auto">
-        <!---<b-pagination
+        <!--<b-pagination
           v-model="currentPage"
           :total-rows="totalRows"
           :per-page="perPage"
@@ -131,6 +132,8 @@
               id="nom_client"
               name="nom_client"
               v-model="form.nomClient"
+              type="text"
+              maxlength="100"
               required
             ></b-form-input>
           </b-form-group>
@@ -141,7 +144,9 @@
             <b-form-input
               id="prenom_client"
               name="prenom_client"
+              type="text"
               v-model="form.prenomClient"
+              maxlength="50"
               required
             ></b-form-input>
           </b-form-group>
@@ -152,6 +157,8 @@
             <b-form-input
               id="adresse_livaison"
               name="adresse_livaison"
+              type="text"
+              maxlength="100"
               v-model="form.adresseLivraison1"
               required
             ></b-form-input>
@@ -166,6 +173,7 @@
             <b-form-input
               id="adresse_complement"
               name="adresse_complement"
+              maxlength="100"
               v-model="form.adresseLivraison2"
             ></b-form-input>
           </b-form-group>
@@ -177,6 +185,7 @@
               id="ville"
               name="ville_livraison"
               v-model="form.ville"
+              maxlength="50"
               required
             ></b-form-input>
           </b-form-group>
@@ -187,6 +196,8 @@
             <b-form-input
               id="code_postal"
               name="code_postal"
+              type="number"
+              maxlength="5"
               v-model="form.codePostal"
               required
             ></b-form-input>
@@ -201,20 +212,22 @@
 // @ is an alias to /src
 
 import axios from "axios";
+import { ValidationObserver, ValidationProvider } from "vee-validate";
 
 export default {
   name: "Acceuil",
   mounted() {
     this.listCommands();
   },
-  props: {
-    change: Event,
-  },
   data() {
     return {
       totalRows: 0,
       items: [],
       fields: [
+        {
+          key: "id",
+          label: "Id",
+        },
         {
           key: "numero",
           label: "Numero",
@@ -242,6 +255,7 @@ export default {
       filter: null,
       filterOn: [],
       form: {
+        id: -1,
         dateCommande: new Date(),
         statut: "",
         numero: "",
@@ -255,11 +269,20 @@ export default {
     };
   },
   methods: {
+    form_validation_num() {
+      var res =
+        this.form.numero.match(/[a-zA-Z]{2}\d{12}/gm) !== null &&
+        this.form.numero.length <= 14
+          ? true
+          : false;
+      return res;
+    },
     makeToast(message, titre) {
       this.$bvToast.toast(`${message}`, {
         title: titre,
         variant: "danger",
-        autoHideDelay: 5000,
+        autoHideDelay: 10000,
+        solid: true,
       });
     },
     info(item, index, target) {
@@ -282,18 +305,33 @@ export default {
         .catch((error) => this.makeToast(error, "Erreur"));
       this.totalRows = this.items.length;
     },
-    getOneCommande(num) {
+    async getOneCommande(num) {
       if (num !== undefined) {
-        axios
+        await axios
           .get(`commande/one/${num}`)
           .then((response) => (this.form = response.data))
           .catch((error) => this.makeToast(error, "Erreur"));
       }
     },
-    getAddCommande() {
-      if (this.form !== {}) {
-        axios.post("commande/add", this.form).then().catch();
-      }
+    async getAddCommande() {
+      const { data } = await axios
+        .post("commande/save/", this.form)
+        .then((response) => {
+          this.makeToast(response, "Ajout/modification OK");
+          this.listCommands();
+        })
+        .catch((error) => this.makeToast(error, "Erreur Ajout/modification"));
+      console.log(data);
+    },
+    async delete() {
+      const { data } = await axios
+        .post("commande/delete/", this.form)
+        .then((response) => {
+          this.makeToast(response, "delete OK");
+          this.listCommands();
+        })
+        .catch((error) => this.makeToast(error, "Erreur Ajout/modification"));
+      console.log(data);
     },
     onFiltered() {},
     enregistrer() {
@@ -309,15 +347,15 @@ export default {
       this.handleSubmit();
     },
     handleSubmit() {
-      // Push the name to submitted names
+      this.form_validation_num();
       //this.submittedNames.push(this.name);
-      console.log("adresse 1", this.form.adresseLivraison1);
-      //this.getAddCommande();
+      this.getAddCommande();
       // Hide the modal manually
       this.$nextTick(() => {
         this.$refs.commande.hide();
       });
     },
   },
+  components: { ValidationObserver, ValidationProvider },
 };
 </script>
