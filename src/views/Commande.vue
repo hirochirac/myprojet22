@@ -59,6 +59,7 @@
       <b-button variant="success" @click="enregistrer"
         >Nouvelle commande</b-button
       >
+      {{ this.form }}
     </b-row>
 
     <b-modal
@@ -221,6 +222,7 @@ export default {
   },
   data() {
     return {
+      mode: "ajout",
       totalRows: 0,
       items: [],
       fields: [
@@ -264,7 +266,8 @@ export default {
         adresseLivraison1: "",
         adresseLivraison2: "",
         ville: "",
-        codePostal: "",
+        codePostal: ""
+        //ligneCommandes: null,
       },
     };
   },
@@ -292,10 +295,9 @@ export default {
       }
     },
     modifier(item, index, target) {
-      if (item !== undefined) {
-        this.getOneCommande(item.numero);
-        this.$refs.commande.show();
-      }
+      this.mode = "modif";
+      this.getOneCommande(item.numero);
+      this.$refs.commande.show();
     },
     effacer(item, index, target) {},
     listCommands() {
@@ -313,14 +315,24 @@ export default {
           .catch((error) => this.makeToast(error, "Erreur"));
       }
     },
-    async getAddCommande() {
-      const { data } = await axios
+    getAddCommande() {
+      const { data } = axios
         .post("commande/save/", this.form)
         .then((response) => {
-          this.makeToast(response, "Ajout/modification OK");
+          this.makeToast(response, "OK");
           this.listCommands();
         })
-        .catch((error) => this.makeToast(error, "Erreur Ajout/modification"));
+        .catch((error) => this.makeToast(error, "Erreur"));
+      console.log(data);
+    },
+    async getModifCommande() {
+      const { data } = await axios
+        .put("commande/update/", this.form)
+        .then((response) => {
+          this.makeToast(response, "OK");
+          this.listCommands();
+        })
+        .catch((error) => this.makeToast(error, "Erreur"));
       console.log(data);
     },
     async delete() {
@@ -330,11 +342,12 @@ export default {
           this.makeToast(response, "delete OK");
           this.listCommands();
         })
-        .catch((error) => this.makeToast(error, "Erreur Ajout/modification"));
+        .catch((error) => this.makeToast(error, ""));
       console.log(data);
     },
     onFiltered() {},
     enregistrer() {
+      this.mode = "ajout";
       this.$refs.commande.show();
     },
     resetModal() {
@@ -347,15 +360,20 @@ export default {
       this.handleSubmit();
     },
     handleSubmit() {
-      this.form_validation_num();
       //this.submittedNames.push(this.name);
+
+      //if (this.mode === "ajout") {
       this.getAddCommande();
+      /*} else if (this.mode === "modif") {
+        this.getModifCommande();
+        this.mode = "ajout";
+      }*/
+
       // Hide the modal manually
       this.$nextTick(() => {
         this.$refs.commande.hide();
       });
     },
   },
-  components: { ValidationObserver, ValidationProvider },
 };
 </script>
