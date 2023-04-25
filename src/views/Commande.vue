@@ -52,7 +52,8 @@
           aria-controls="my-table"
           :value="change"
         >
-        </b-pagination>-->
+        </b-pagination
+        >-->
       </b-row>
     </b-row>
     <b-row>
@@ -219,6 +220,7 @@ export default {
   name: "Acceuil",
   mounted() {
     this.listCommands();
+    this.listAllPages();
   },
   data() {
     return {
@@ -247,6 +249,7 @@ export default {
           label: "Actions",
         },
       ],
+      pages: [{}],
       totalRows: 0,
       currentPage: 0,
       perPage: 5,
@@ -266,12 +269,18 @@ export default {
         adresseLivraison1: "",
         adresseLivraison2: "",
         ville: "",
-        codePostal: ""
+        codePostal: "",
         //ligneCommandes: null,
       },
     };
   },
   methods: {
+    listAllPages() {
+      axios
+        .get("commande/pages")
+        .then((response) => (this.pages = response.data))
+        .catch((error) => this.makeToast(error, "Erreur"));
+    },
     form_validation_num() {
       var res =
         this.form.numero.match(/[a-zA-Z]{2}\d{12}/gm) !== null &&
@@ -299,7 +308,9 @@ export default {
       this.getOneCommande(item.numero);
       this.$refs.commande.show();
     },
-    effacer(item, index, target) {},
+    effacer(item, index, target) {
+      this.delete(item.id);
+    },
     listCommands() {
       axios
         .get("commande/all")
@@ -315,12 +326,12 @@ export default {
           .catch((error) => this.makeToast(error, "Erreur"));
       }
     },
-    getAddCommande() {
-      const { data } = axios
+    async getAddCommande() {
+      const { data } = await axios
         .post("commande/save/", this.form)
         .then((response) => {
-          this.makeToast(response, "OK");
           this.listCommands();
+          this.makeToast(response, "OK");
         })
         .catch((error) => this.makeToast(error, "Erreur"));
       console.log(data);
@@ -329,16 +340,18 @@ export default {
       const { data } = await axios
         .put("commande/update/", this.form)
         .then((response) => {
-          this.makeToast(response, "OK");
           this.listCommands();
+          this.makeToast(response, "OK");
         })
         .catch((error) => this.makeToast(error, "Erreur"));
       console.log(data);
     },
-    async delete() {
+    async delete(id) {
       const { data } = await axios
-        .post("commande/delete/", this.form)
+        .delete("commande/delete/", this.form)
         .then((response) => {
+          this.form = {};
+          this.listCommands;
           this.makeToast(response, "delete OK");
           this.listCommands();
         })
@@ -362,12 +375,12 @@ export default {
     handleSubmit() {
       //this.submittedNames.push(this.name);
 
-      //if (this.mode === "ajout") {
-      this.getAddCommande();
-      /*} else if (this.mode === "modif") {
+      if (this.mode === "ajout") {
+        this.getAddCommande();
+      } else if (this.mode === "modif") {
         this.getModifCommande();
         this.mode = "ajout";
-      }*/
+      }
 
       // Hide the modal manually
       this.$nextTick(() => {
