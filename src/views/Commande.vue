@@ -3,7 +3,7 @@
     <b-row>
       <b-table
         ref="formulaire"
-        :items="items"
+        :items="pages.content"
         :fields="fields"
         :current-page="currentPage"
         :per-page="perPage"
@@ -45,22 +45,20 @@
         </template>
       </b-table>
       <b-row class="overflow-auto">
-        <!--<b-pagination
+        <b-pagination
+          ref="pagination"
           v-model="currentPage"
           :total-rows="totalRows"
-          :per-page="perPage"
+          :per-page="7"
           aria-controls="my-table"
-          :value="change"
         >
-        </b-pagination
-        >-->
+        </b-pagination>
       </b-row>
     </b-row>
     <b-row>
       <b-button variant="success" @click="enregistrer"
         >Nouvelle commande</b-button
       >
-      {{ this.form }}
     </b-row>
 
     <b-modal
@@ -71,11 +69,15 @@
       @hidden="resetModal"
     >
       <ul>
-        <li>Statut: {{ this.form.statut }}</li>
-        <li>Numéro: {{ this.form.numero }}</li>
-        <li>Commandée le : {{ this.form.dateCommande }}</li>
-        <li>Nom client: {{ this.form.nomClient }}</li>
-        <li>prénom client: {{ this.form.prenomClient }}</li>
+        <li>Statut: {{ form.statut }}</li>
+        <li>Numéro: {{ form.numero }}</li>
+        <li>Commandée le : {{ form.dateCommande }}</li>
+        <li>Nom client: {{ form.nomClient }}</li>
+        <li>prénom client: {{ form.prenomClient }}</li>
+        <li v-for="p in form.ligneCommandes" :key="p.numero">
+          {{ p.id }} {{ p.produit }} {{ p.prix }} {{ p.quantite }}
+          {{ p.prix * p.quantite }}
+        </li>
       </ul>
     </b-modal>
 
@@ -207,6 +209,7 @@
         </b-form-row>
       </b-form>
     </b-modal>
+    {{ items }}
   </div>
 </template>
 
@@ -219,14 +222,12 @@ import { ValidationObserver, ValidationProvider } from "vee-validate";
 export default {
   name: "Acceuil",
   mounted() {
-    this.listCommands();
-    this.listAllPages();
+    this.getPage();
   },
   data() {
     return {
       mode: "ajout",
       totalRows: 0,
-      items: [],
       fields: [
         {
           key: "id",
@@ -249,11 +250,10 @@ export default {
           label: "Actions",
         },
       ],
-      pages: [{}],
-      totalRows: 0,
+      pages: {},
       currentPage: 0,
-      perPage: 5,
-      pageOptions: [5, 10, 15, { value: 100, text: "Show a lot" }],
+      perPage: 7,
+      pageOptions: [7, 10, 15, { value: 100, text: "Show a lot" }],
       sortBy: "",
       sortDesc: false,
       sortDirection: "asc",
@@ -270,15 +270,22 @@ export default {
         adresseLivraison2: "",
         ville: "",
         codePostal: "",
-        //ligneCommandes: null,
       },
     };
   },
   methods: {
+    getPage() {
+      axios
+        .get("commande/page")
+        .then((response) => (this.pages = response.data))
+        .catch((error) => this.makeToast(error, "Erreur"));
+      this.totalRows = this.pages.totalElements;
+      this.items = this.pages.content;
+    },
     listAllPages() {
       axios
         .get("commande/pages")
-        .then((response) => (this.pages = response.data))
+        .then((response) => (this.items = response.data))
         .catch((error) => this.makeToast(error, "Erreur"));
     },
     form_validation_num() {
@@ -316,7 +323,6 @@ export default {
         .get("commande/all")
         .then((response) => (this.items = response.data))
         .catch((error) => this.makeToast(error, "Erreur"));
-      this.totalRows = this.items.length;
     },
     async getOneCommande(num) {
       if (num !== undefined) {
@@ -348,10 +354,9 @@ export default {
     },
     async delete(id) {
       const { data } = await axios
-        .delete("commande/delete/", this.form)
+        .delete(`commande/delete/${this.form.numero}`)
         .then((response) => {
           this.form = {};
-          this.listCommands;
           this.makeToast(response, "delete OK");
           this.listCommands();
         })
