@@ -17,6 +17,16 @@
         small
         @filtered="onFiltered"
       >
+        <template #cell(produit)="row">
+          <b-button
+            size="sm"
+            @click="info(row.item, row.index, $event.target)"
+            variant="warning"
+            class="mr-1"
+          >
+            Produits
+          </b-button>
+        </template>
         <template #cell(actions)="row">
           <b-button
             size="sm"
@@ -49,7 +59,7 @@
           ref="pagination"
           v-model="currentPage"
           :total-rows="totalRows"
-          :per-page="7"
+          :per-page="perPage"
           aria-controls="my-table"
         >
         </b-pagination>
@@ -68,17 +78,32 @@
       @show="resetModal"
       @hidden="resetModal"
     >
-      <ul>
-        <li>Statut: {{ form.statut }}</li>
-        <li>Numéro: {{ form.numero }}</li>
-        <li>Commandée le : {{ form.dateCommande }}</li>
-        <li>Nom client: {{ form.nomClient }}</li>
-        <li>prénom client: {{ form.prenomClient }}</li>
-        <li v-for="p in form.ligneCommandes" :key="p.numero">
-          {{ p.id }} {{ p.produit }} {{ p.prix }} {{ p.quantite }}
-          {{ p.prix * p.quantite }}
-        </li>
-      </ul>
+      <b-row>
+        <b-col>Statut:</b-col><b-col>{{ form.statut }}</b-col>
+      </b-row>
+      <b-row>
+        <b-col>Numéro:</b-col><b-col>{{ form.numero }}</b-col>
+      </b-row>
+      <b-row>
+        <b-col>Commandée le :</b-col><b-col>{{ form.dateCommande }}</b-col>
+      </b-row>
+      <b-row>
+        <b-col>Nom client:</b-col><b-col>{{ form.nomClient }}</b-col>
+      </b-row>
+      <b-row>
+        <b-col>prénom client:</b-col><b-row>{{ form.prenomClient }}</b-row>
+      </b-row>
+      <b-row v-for="p in form.ligneCommandes" :key="p.id">
+        <b-col>{{ p.produit }}</b-col
+        ><b-col>{{ p.prix }}*{{ p.quantite }}</b-col
+        ><b-col>{{ p.prix * p.quantite }}</b-col>
+      </b-row>
+      {{ this.getTotalCommande(form.numero) }}
+      <b-row>
+        <b-col>Total</b-col>
+        <b-col></b-col>
+        <b-col>{{ total }}</b-col>
+      </b-row>
     </b-modal>
 
     <b-modal
@@ -209,7 +234,6 @@
         </b-form-row>
       </b-form>
     </b-modal>
-    {{ items }}
   </div>
 </template>
 
@@ -218,6 +242,7 @@
 
 import axios from "axios";
 import { ValidationObserver, ValidationProvider } from "vee-validate";
+import axiosVue from "axios-vue";
 
 export default {
   name: "Acceuil",
@@ -226,6 +251,7 @@ export default {
   },
   data() {
     return {
+      total: 0.0,
       mode: "ajout",
       totalRows: 0,
       fields: [
@@ -246,12 +272,16 @@ export default {
           label: "Prenom du client",
         },
         {
+          key: "produit",
+          label: "Produits",
+        },
+        {
           key: "actions",
           label: "Actions",
         },
       ],
       pages: {},
-      currentPage: 0,
+      currentPage: 1,
       perPage: 7,
       pageOptions: [7, 10, 15, { value: 100, text: "Show a lot" }],
       sortBy: "",
@@ -274,26 +304,35 @@ export default {
     };
   },
   methods: {
-    getPage() {
-      axios
+    async getTotalCommande(numero) {
+      await axios
+          .get(`commande/total/${numero}`)
+          .then((response) => {
+            if (numero !== undefined) {
+              this.total = response.data;
+            } else {
+              this.total = 0
+            }
+          })
+          .catch((error) => this.makeToast(error, "Erreur"));
+    },
+    async getPage() {
+      await axios
         .get("commande/page")
         .then((response) => (this.pages = response.data))
         .catch((error) => this.makeToast(error, "Erreur"));
       this.totalRows = this.pages.totalElements;
       this.items = this.pages.content;
     },
-    listAllPages() {
-      axios
+    async listAllPages() {
+      await axios
         .get("commande/pages")
         .then((response) => (this.items = response.data))
         .catch((error) => this.makeToast(error, "Erreur"));
     },
     form_validation_num() {
       var res =
-        this.form.numero.match(/[a-zA-Z]{2}\d{12}/gm) !== null &&
-        this.form.numero.length <= 14
-          ? true
-          : false;
+        this.form.numero.match(/[a-zA-Z]{2}\d{12}/gm) !== null ? true : false;
       return res;
     },
     makeToast(message, titre) {
@@ -318,8 +357,8 @@ export default {
     effacer(item, index, target) {
       this.delete(item.id);
     },
-    listCommands() {
-      axios
+    async listCommands() {
+      await axios
         .get("commande/all")
         .then((response) => (this.items = response.data))
         .catch((error) => this.makeToast(error, "Erreur"));
@@ -340,7 +379,6 @@ export default {
           this.makeToast(response, "OK");
         })
         .catch((error) => this.makeToast(error, "Erreur"));
-      console.log(data);
     },
     async getModifCommande() {
       const { data } = await axios
@@ -350,7 +388,6 @@ export default {
           this.makeToast(response, "OK");
         })
         .catch((error) => this.makeToast(error, "Erreur"));
-      console.log(data);
     },
     async delete(id) {
       const { data } = await axios
@@ -361,7 +398,6 @@ export default {
           this.listCommands();
         })
         .catch((error) => this.makeToast(error, ""));
-      console.log(data);
     },
     onFiltered() {},
     enregistrer() {
