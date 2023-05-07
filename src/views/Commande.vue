@@ -139,6 +139,18 @@
               required
             ></b-form-input>
           </b-form-group>
+          <label class="mt-3" for="datepicker-dateformat2"
+            >Short date format</label
+          >
+          <b-form-datepicker
+            id="datepicker-dateformat2"
+            :date-format-options="{
+              year: 'numeric',
+              month: 'numeric',
+              day: '2-digit',
+            }"
+            locale="fr"
+          ></b-form-datepicker>
         </b-form-row>
 
         <b-form-row>
@@ -284,7 +296,7 @@ export default {
       currentPage: 1,
       perPage: 7,
       pageOptions: [7, 10, 15, { value: 100, text: "Show a lot" }],
-      sortBy: "",
+      sortBy: "numero",
       sortDesc: false,
       sortDirection: "asc",
       filter: null,
@@ -306,15 +318,15 @@ export default {
   methods: {
     async getTotalCommande(numero) {
       await axios
-          .get(`commande/total/${numero}`)
-          .then((response) => {
-            if (numero !== undefined) {
-              this.total = response.data;
-            } else {
-              this.total = 0
-            }
-          })
-          .catch((error) => this.makeToast(error, "Erreur"));
+        .get(`commande/total/${numero}`)
+        .then((response) => {
+          if (numero !== undefined) {
+            this.total = response.data;
+          } else {
+            this.total = 0;
+          }
+        })
+        .catch((error) => this.makeToast(error, "Erreur"));
     },
     async getPage() {
       await axios
