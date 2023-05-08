@@ -90,15 +90,11 @@
       <b-row>
         <b-col>Nom client:</b-col><b-col>{{ form.nomClient }}</b-col>
       </b-row>
-      <b-row>
-        <b-col>prénom client:</b-col><b-row>{{ form.prenomClient }}</b-row>
-      </b-row>
       <b-row v-for="p in form.ligneCommandes" :key="p.id">
         <b-col>{{ p.produit }}</b-col
         ><b-col>{{ p.prix }}*{{ p.quantite }}</b-col
         ><b-col>{{ p.prix * p.quantite }}</b-col>
       </b-row>
-      {{ this.getTotalCommande(form.numero) }}
       <b-row>
         <b-col>Total</b-col>
         <b-col></b-col>
@@ -146,7 +142,7 @@
             id="datepicker-dateformat2"
             :date-format-options="{
               year: 'numeric',
-              month: 'numeric',
+              month: '2-digit',
               day: '2-digit',
             }"
             locale="fr"
@@ -317,16 +313,18 @@ export default {
   },
   methods: {
     async getTotalCommande(numero) {
-      await axios
-        .get(`commande/total/${numero}`)
-        .then((response) => {
-          if (numero !== undefined) {
+      let res = {};
+      console.log(numero);
+      if (numero !== undefined || numero !== "") {
+        res = await axios
+          .get(`commande/total/${numero}`)
+          .then((response) => {
             this.total = response.data;
-          } else {
-            this.total = 0;
-          }
-        })
-        .catch((error) => this.makeToast(error, "Erreur"));
+          })
+          .catch((error) => this.makeToast(error, "Erreur"));
+      } else {
+        this.total = 0;
+      }
     },
     async getPage() {
       await axios
@@ -335,17 +333,6 @@ export default {
         .catch((error) => this.makeToast(error, "Erreur"));
       this.totalRows = this.pages.totalElements;
       this.items = this.pages.content;
-    },
-    async listAllPages() {
-      await axios
-        .get("commande/pages")
-        .then((response) => (this.items = response.data))
-        .catch((error) => this.makeToast(error, "Erreur"));
-    },
-    form_validation_num() {
-      var res =
-        this.form.numero.match(/[a-zA-Z]{2}\d{12}/gm) !== null ? true : false;
-      return res;
     },
     makeToast(message, titre) {
       this.$bvToast.toast(`${message}`, {
@@ -358,6 +345,7 @@ export default {
     info(item, index, target) {
       if (item !== undefined) {
         this.getOneCommande(item.numero);
+        this.getTotalCommande(item.numero);
         this.$refs.information.show();
       }
     },
@@ -367,13 +355,10 @@ export default {
       this.$refs.commande.show();
     },
     effacer(item, index, target) {
-      this.delete(item.id);
-    },
-    async listCommands() {
-      await axios
-        .get("commande/all")
-        .then((response) => (this.items = response.data))
-        .catch((error) => this.makeToast(error, "Erreur"));
+      this.mode = "del";
+      this.getOneCommande(item.numero);
+      this.getDeleteCommade(item.id);
+      this.$refs.commande.show();
     },
     async getOneCommande(num) {
       if (num !== undefined) {
@@ -387,7 +372,7 @@ export default {
       const { data } = await axios
         .post("commande/save/", this.form)
         .then((response) => {
-          this.listCommands();
+          this.getPage();
           this.makeToast(response, "OK");
         })
         .catch((error) => this.makeToast(error, "Erreur"));
@@ -396,20 +381,19 @@ export default {
       const { data } = await axios
         .put("commande/update/", this.form)
         .then((response) => {
-          this.listCommands();
+          this.getPage();
           this.makeToast(response, "OK");
         })
         .catch((error) => this.makeToast(error, "Erreur"));
     },
-    async delete(id) {
+    async getDeleteCommade(id) {
       const { data } = await axios
-        .delete(`commande/delete/${this.form.numero}`)
+        .delete(`commande/del/${this.form.id}`)
         .then((response) => {
-          this.form = {};
+          this.getPage();
           this.makeToast(response, "delete OK");
-          this.listCommands();
         })
-        .catch((error) => this.makeToast(error, ""));
+        .catch((error) => this.makeToast(error, "delete KO"));
     },
     onFiltered() {},
     enregistrer() {
@@ -426,13 +410,12 @@ export default {
       this.handleSubmit();
     },
     handleSubmit() {
-      //this.submittedNames.push(this.name);
-
       if (this.mode === "ajout") {
         this.getAddCommande();
       } else if (this.mode === "modif") {
         this.getModifCommande();
-        this.mode = "ajout";
+      } else if (this.mode === "del") {
+        this.getDeleteCommade();
       }
 
       // Hide the modal manually
