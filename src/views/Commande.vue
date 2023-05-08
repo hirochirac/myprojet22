@@ -417,7 +417,7 @@ export default {
       } else if (this.mode === "del") {
         this.getDeleteCommade();
       }
-
+      this.$refs.formulaire.refresh();
       // Hide the modal manually
       this.$nextTick(() => {
         this.$refs.commande.hide();
