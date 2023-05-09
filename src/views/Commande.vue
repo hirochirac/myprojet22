@@ -61,6 +61,7 @@
           :total-rows="totalRows"
           :per-page="perPage"
           aria-controls="my-table"
+          @click="loadPage"
         >
         </b-pagination>
       </b-row>
@@ -71,13 +72,7 @@
       >
     </b-row>
 
-    <b-modal
-      id="info"
-      ref="information"
-      title="Information"
-      @show="resetModal"
-      @hidden="resetModal"
-    >
+    <b-modal id="info" ref="information" title="Information" ok-only>
       <b-row>
         <b-col>Statut:</b-col><b-col>{{ form.statut }}</b-col>
       </b-row>
@@ -107,7 +102,8 @@
       ref="commande"
       title="Enregister/Modifier commande"
       @show="resetModal"
-      @ok="handleSubmit"
+      ok-disabled
+      cancel-disabled
     >
       <b-form ref="form" @submit.stop.prevent="handleSubmit">
         <b-form-row>
@@ -127,26 +123,21 @@
 
         <b-form-row>
           <b-form-group label="Date de commande" label-for="Date de commande">
-            <b-form-input
-              id="date_commande"
-              name="date_commande"
-              type="date"
+            <label class="mt-3" for="datepicker-dateformat2"
+              >Date de commande</label
+            >
+            <b-form-datepicker
+              id="datepicker-dateformat2"
               v-model="form.dateCommande"
+              :date-format-options="{
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+              }"
+              locale="fr"
               required
-            ></b-form-input>
+            ></b-form-datepicker>
           </b-form-group>
-          <label class="mt-3" for="datepicker-dateformat2"
-            >Short date format</label
-          >
-          <b-form-datepicker
-            id="datepicker-dateformat2"
-            :date-format-options="{
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit',
-            }"
-            locale="fr"
-          ></b-form-datepicker>
         </b-form-row>
 
         <b-form-row>
@@ -240,6 +231,12 @@
             ></b-form-input>
           </b-form-group>
         </b-form-row>
+        <b-form-row>
+          <b-button-group>
+            <b-button type="submit" variant="warning">Enregister</b-button>
+            <b-button variant="secondary" @click="annuler">Annuler</b-button>
+          </b-button-group>
+        </b-form-row>
       </b-form>
     </b-modal>
   </div>
@@ -249,11 +246,10 @@
 // @ is an alias to /src
 
 import axios from "axios";
-import { ValidationObserver, ValidationProvider } from "vee-validate";
 import axiosVue from "axios-vue";
 
 export default {
-  name: "Acceuil",
+  name: "commande",
   mounted() {
     this.getPage();
   },
@@ -279,10 +275,10 @@ export default {
           key: "prenomClient",
           label: "Prenom du client",
         },
-        {
-          key: "produit",
-          label: "Produits",
-        },
+        // {
+        //   key: "produit",
+        //   label: "Produits",
+        // },
         {
           key: "actions",
           label: "Actions",
@@ -293,10 +289,10 @@ export default {
       perPage: 7,
       pageOptions: [7, 10, 15, { value: 100, text: "Show a lot" }],
       sortBy: "numero",
-      sortDesc: false,
+      sortDesc: true,
       sortDirection: "asc",
       filter: null,
-      filterOn: [],
+      filterOn: ["numero", "nomClient"],
       form: {
         id: -1,
         dateCommande: new Date(),
@@ -326,10 +322,24 @@ export default {
         this.total = 0;
       }
     },
+    async loadPage() {
+      await axios
+        .get(
+          `commande/pages?pageNo=${this.currentPage}&pageSize=${this.perPage}`
+        )
+        .then((response) => {
+          this.pages = response.data;
+        })
+        .catch((error) => this.makeToast(error, "Erreur"));
+      this.totalRows = this.pages.totalElements;
+      this.items = this.pages.content;
+    },
     async getPage() {
       await axios
-        .get("commande/page")
-        .then((response) => (this.pages = response.data))
+        .get(`commande/page?no=${this.perPage}`)
+        .then((response) => {
+          this.pages = response.data;
+        })
         .catch((error) => this.makeToast(error, "Erreur"));
       this.totalRows = this.pages.totalElements;
       this.items = this.pages.content;
@@ -403,11 +413,9 @@ export default {
     resetModal() {
       this.form = {};
     },
-    handleOk(bvModalEvent) {
-      // Prevent modal from closing
-      bvModalEvent.preventDefault();
-      // Trigger submit handler
-      this.handleSubmit();
+    annuler() {
+      this.resetModal();
+      this.$refs.commande.hide();
     },
     handleSubmit() {
       if (this.mode === "ajout") {

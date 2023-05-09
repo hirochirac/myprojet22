@@ -27,7 +27,7 @@ Object.keys(rules).forEach(rule => {
   })
 })
 
-Vue.use(axios)
+//Vue.use(axios)
 //Vue.use(VueAxios)
 
 axios.defaults.baseURL = 'http://localhost:9090'
