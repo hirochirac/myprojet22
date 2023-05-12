@@ -4,7 +4,7 @@ import router from './router'
 import store from './store'
 import Bootstrap from 'bootstrap'
 import BootstrapVue from 'bootstrap-vue'
-import axios, { Axios } from 'axios'
+import axios from 'axios'
 import { VueAxios } from 'axios-vue'
 import { ValidationObserver, ValidationProvider, extend } from 'vee-validate'
 
@@ -27,7 +27,7 @@ Object.keys(rules).forEach(rule => {
   })
 })
 
-//Vue.use(axios)
+Vue.use(axios)
 //Vue.use(VueAxios)
 
 axios.defaults.baseURL = 'http://localhost:9090'

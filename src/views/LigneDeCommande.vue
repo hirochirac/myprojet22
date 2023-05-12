@@ -210,7 +210,9 @@ export default {
     },
     enregistrer() {
       this.mode = "ajout";
-      this.$refs.tablo.show();
+      if (this.commandeId !== undefined) {
+        this.$refs.tablo.show();
+      }
     },
     modifier(item, index, evt) {
       this.mode = "modif";
@@ -228,11 +230,37 @@ export default {
       this.infoQuantite = item.quantite;
       this.refs.info.show();
     },
-    handleSubmit() {
+    async handleSubmit() {
       if (this.mode === "ajout") {
+        await axios
+          .post("ligne/ajout/", this.form)
+          .then((response) =>
+            this.makeToast("Ajout d'un produit à une commande", "Réussite")
+          )
+          .catch((err) =>
+            this.makeToast("Erreur ajout un produit à une commande", "Erreur")
+          );
       } else if (this.mode === "modif") {
+        await axios
+          .put("ligne/modif/", this.form)
+          .then((response) =>
+            this.makeToast("Modif d'un produit à une commande", "Réussite")
+          )
+          .catch((err) =>
+            this.makeToast("Erreur Modif un produit à une commande", "Erreur")
+          );
       } else if (this.mode == "del") {
+        await axios
+          .delete(`ligne/ajout/${form.id}`)
+          .then((response) =>
+            this.makeToast("effacer un produit d'une commande", "Réussite")
+          )
+          .catch((err) =>
+            this.makeToast("Erreur effacer un produit d'une commande", "Erreur")
+          );
       }
+      this.getPages();
+      this.$refs.tablo.refresh();
     },
     onFiltered() {},
     makeToast(message, titre) {

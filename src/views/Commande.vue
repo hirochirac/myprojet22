@@ -95,7 +95,8 @@
             {{ row.item.prix * row.item.quantite }}
           </template>
           <template #foot(total)="row">
-            <b>Total:{{ total }}</b>
+            <b>Total:{{ total }}</b
+            ><br />
             <b>Moyenne:{{ moy }}</b>
           </template>
         </b-table>
@@ -470,7 +471,7 @@ export default {
         this.getDeleteCommade();
       }
       this.$refs.formulaire.refresh();
-      // Hide the modal manually
+      this.annuler();
       this.$nextTick(() => {
         this.$refs.commande.hide();
       });
