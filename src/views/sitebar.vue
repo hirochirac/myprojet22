@@ -23,7 +23,7 @@
               <b-link class="nav-text nav-link" to="commande">Commandes</b-link>
             </li>
             <li class="nav-item">
-              <b-link class="nav-text nav-link" to="ligne" disabled
+              <b-link class="nav-text nav-link" to="ligne" 
                 >Lignes de commande</b-link
               >
             </li>

@@ -72,7 +72,7 @@
       >
     </b-row>
 
-    <b-modal id="info" ref="information" title="Information" ok-only>
+    <b-modal id="info" ref="information" title="Information" size="md" ok-only>
       <b-row>
         <b-col>Statut:</b-col><b-col>{{ form.statut }}</b-col>
       </b-row>
@@ -83,24 +83,29 @@
         <b-col>Commandée le :</b-col><b-col>{{ form.dateCommande }}</b-col>
       </b-row>
       <b-row>
-        <b-col>Nom client:</b-col><b-col>{{ form.nomClient }}</b-col>
-      </b-row>
-      <b-row v-for="p in form.ligneCommandes" :key="p.id">
-        <b-col>{{ p.produit }}</b-col
-        ><b-col>{{ p.prix }}*{{ p.quantite }}</b-col
-        ><b-col>{{ p.prix * p.quantite }}</b-col>
+        <b-col>Nbre de jrs écoulés :</b-col><b-col>{{ orderDelay }}</b-col>
       </b-row>
       <b-row>
-        <b-col>Total</b-col>
-        <b-col></b-col>
-        <b-col>{{ total }}</b-col>
+        <b-col>Nom client:</b-col><b-col>{{ form.nomClient }}</b-col>
+      </b-row>
+      {{ form.ligneCommandes }}
+      <b-row>
+        <b-table :items="form.ligneCommandes" :fields="infoFields" hover>
+          <template #cell(total)="row">
+            {{ row.item.prix * row.item.quantite }}
+          </template>
+          <template #foot(total)="row">
+            <b>Total:{{ total }}</b>
+            <b>Moyenne:{{ moy }}</b>
+          </template>
+        </b-table>
       </b-row>
     </b-modal>
 
     <b-modal
       id="commande"
       ref="commande"
-      title="Enregister/Modifier commande"
+      :title="titre"
       @show="resetModal"
       ok-disabled
       cancel-disabled
@@ -258,6 +263,30 @@ export default {
       total: 0.0,
       mode: "ajout",
       totalRows: 0,
+      titre: "Ajouter commande",
+      orderDelay: 0,
+      infoFields: [
+        {
+          key: "id",
+          label: "Id",
+        },
+        {
+          key: "nomProduit",
+          label: "Nom du produit",
+        },
+        {
+          key: "prix",
+          label: "Prix",
+        },
+        {
+          key: "quantite",
+          label: "Quantite",
+        },
+        {
+          key: "total",
+          label: "total",
+        },
+      ],
       fields: [
         {
           key: "id",
@@ -355,17 +384,21 @@ export default {
     info(item, index, target) {
       if (item !== undefined) {
         this.getOneCommande(item.numero);
+        this.titre = "Information sur commande";
         this.getTotalCommande(item.numero);
+        this.getOrderDelay(item.numero);
         this.$refs.information.show();
       }
     },
     modifier(item, index, target) {
       this.mode = "modif";
       this.getOneCommande(item.numero);
+      this.titre = "Modifier commande";
       this.$refs.commande.show();
     },
     effacer(item, index, target) {
       this.mode = "del";
+      this.titre = "Effacer commande";
       this.getOneCommande(item.numero);
       this.getDeleteCommade(item.id);
       this.$refs.commande.show();
@@ -405,9 +438,20 @@ export default {
         })
         .catch((error) => this.makeToast(error, "delete KO"));
     },
+    async getOrderDelay(numero) {
+      if (numero !== undefined) {
+        const { data } = await axios
+          .get(`commande/delay/${numero}`)
+          .then((response) => {
+            this.orderDelay = response.data;
+          })
+          .catch((error) => this.makeToast(error, "getOrderDelay KO"));
+      }
+    },
     onFiltered() {},
     enregistrer() {
       this.mode = "ajout";
+      this.titre = "Ajouter commande";
       this.$refs.commande.show();
     },
     resetModal() {

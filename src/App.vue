@@ -11,8 +11,8 @@
 <script>
 import sitebar from "../src/views/sitebar.vue";
 import footersite from "../src/views/footersite.vue";
-import ValidationObserver from "vee-validate"
-import { ValidationProvider } from 'vee-validate';
+import ValidationObserver from "vee-validate";
+import { ValidationProvider } from "vee-validate";
 
 export default {
   components: { sitebar, footersite, ValidationObserver, ValidationProvider },
