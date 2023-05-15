@@ -46,7 +46,7 @@
         </b-button>
       </template>
     </b-table>
-    {{ pages.content }}
+    {{ form }}
     <b-row class="overflow-auto">
       <b-pagination
         ref="pagination"
@@ -58,9 +58,7 @@
       </b-pagination>
     </b-row>
     <b-row>
-      <b-button variant="success" @click="enregistrer"
-        >Ajout de produit</b-button
-      >
+      <b-button variant="success" @click="add()">Ajout de produit</b-button>
     </b-row>
 
     <b-modal ref="info" size="xl" :title="mode">
@@ -86,7 +84,7 @@
       </b-row>
     </b-modal>
 
-    <b-form @submit.stop.prevent="handleSubmit">
+    <b-form @submit.stop.prevent="enregister">
       <b-modal ref="tablo" size="xl" :title="mode">
         <b-form-group label="Nom du produit" label-for="produit">
           <b-form-input
@@ -113,6 +111,7 @@
             :options="commandes"
             value-field="numero"
             text-field="numero"
+            @change="getCommandeLigne()"
             :disabled="mode == 'modif' || mode == 'info' || mode == 'del'"
           >
             <template #first>
@@ -123,9 +122,9 @@
           </b-form-select>
         </b-form-group>
         <template #modal-footer>
-          <div v-if="mode !== 'info'">
-            <b-button type="submit" variant="warning">{{ mode }}</b-button>
-          </div>
+          <b-button type="submit" variant="warning" @click="enregistrer">{{
+            mode
+          }}</b-button>
           <b-button type="submit" variant="primary" @click="annuler"
             >Annuler</b-button
           >
@@ -146,6 +145,7 @@ export default {
   },
   data() {
     return {
+      deleteOk: "",
       total: 0.0,
       mode: "ajout",
       totalRows: 0,
@@ -160,7 +160,7 @@ export default {
         produit: "",
         prix: 0.0,
         quantite: 0,
-        commande: {},
+        commande: null,
       },
       fields: [
         {
@@ -202,6 +202,27 @@ export default {
     };
   },
   methods: {
+    showMsgBoxTwo() {
+      this.deleteOk = "";
+      this.$bvModal
+        .msgBoxConfirm("Confirmez la suppression.", {
+          title: "Please Confirm",
+          size: "sm",
+          buttonSize: "sm",
+          okVariant: "danger",
+          okTitle: "oui",
+          cancelTitle: "non",
+          footerClass: "p-2",
+          hideHeaderClose: false,
+          centered: true,
+        })
+        .then((value) => {
+          this.deleteOk = value;
+        })
+        .catch((err) => {
+          // An error occurred
+        });
+    },
     async getPages() {
       await axios
         .get(`ligne/all`)
@@ -211,6 +232,16 @@ export default {
         .catch((error) => {
           this.makeToast("liste produit vide", "");
         });
+    },
+    async loadPage() {
+      await axios
+        .get(`ligne/pages?pageNo=${this.currentPage}&pageSize=${this.perPage}`)
+        .then((response) => {
+          this.pages = response.data;
+        })
+        .catch((error) => this.makeToast(error, "Erreur"));
+      this.totalRows = this.pages.totalElements;
+      this.items = this.pages.content;
     },
     async getAllCommande() {
       await axios
@@ -222,11 +253,19 @@ export default {
           this.makeToast("liste commande vide", "");
         });
     },
+    async getCommandeLigne() {
+      if (this.commandeId !== undefined) {
+        await axios
+          .get(`commande/one/${this.commandeId}`)
+          .then((response) => (this.form.commande = response.data))
+          .catch((error) => this.makeToast(error, "Erreur"));
+      }
+    },
     annuler() {
       this.form = {};
       this.$refs.tablo.hide();
     },
-    enregistrer() {
+    add() {
       this.mode = "ajout";
       this.$refs.tablo.show();
     },
@@ -253,37 +292,56 @@ export default {
       this.infoQuantite = item.quantite;
       this.$refs.info.show();
     },
-    async handleSubmit() {
+    async getAddProduit() {
+      this.getCommandeLigne(this.commandeId);
+      await axios
+        .post(`ligne/ajout/`, this.form)
+        .then((response) => {
+          this.getPages();
+          this.$refs.ligne.refresh();
+          this.$refs.tablo.hide();
+          this.makeToast("Ajout d'un produit à une commande", "Réussite");
+        })
+        .catch((err) =>
+          this.makeToast("Erreur ajout un produit à une commande", "Erreur")
+        );
+    },
+    async getModifProduit() {
+      await axios
+        .put("ligne/modif/", this.form)
+        .then((response) => {
+          this.getPages();
+          this.$refs.ligne.refresh();
+          this.$refs.tablo.hide();
+          this.makeToast("Modif d'un produit à une commande", "Réussite");
+        })
+        .catch((err) =>
+          this.makeToast("Erreur Modif un produit à une commande", "Erreur")
+        );
+    },
+    async getDelProduit() {
+      this.msgBoxConfirm();
+      //if (this.deleteOk === 'oui') {
+      await axios
+        .delete(`ligne/del/${this.form.id}`)
+        .then((response) => {
+          this.getPages();
+          this.$refs.ligne.refresh();
+          this.$refs.tablo.hide();
+          this.makeToast("effacer un produit d'une commande", "Réussite");
+        })
+        .catch((err) =>
+          this.makeToast("Erreur effacer un produit d'une commande", "Erreur")
+        );
+      //}
+    },
+    enregistrer() {
       if (this.mode === "ajout") {
-        await axios
-          .post(`ligne/ajout/${commandeId}`, this.form)
-          .then((response) => {
-            this.getPages();
-            this.$refs.ligne.refresh();
-            this.$refs.tablo.hide();
-            this.makeToast("Ajout d'un produit à une commande", "Réussite");
-          })
-          .catch((err) =>
-            this.makeToast("Erreur ajout un produit à une commande", "Erreur")
-          );
+        this.getAddProduit();
       } else if (this.mode === "modif") {
-        await axios
-          .put("ligne/modif/", this.form)
-          .then((response) =>
-            this.makeToast("Modif d'un produit à une commande", "Réussite")
-          )
-          .catch((err) =>
-            this.makeToast("Erreur Modif un produit à une commande", "Erreur")
-          );
+        this.getModifProduit();
       } else if (this.mode == "del") {
-        await axios
-          .delete(`ligne/ajout/${form.id}`)
-          .then((response) =>
-            this.makeToast("effacer un produit d'une commande", "Réussite")
-          )
-          .catch((err) =>
-            this.makeToast("Erreur effacer un produit d'une commande", "Erreur")
-          );
+        this.getDelProduit();
       }
     },
     onFiltered() {},

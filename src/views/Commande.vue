@@ -67,9 +67,7 @@
       </b-row>
     </b-row>
     <b-row>
-      <b-button variant="success" @click="enregistrer"
-        >Nouvelle commande</b-button
-      >
+      <b-button variant="success" @click="add">Nouvelle commande</b-button>
     </b-row>
     <b-modal id="info" ref="information" title="Information" size="md" ok-only>
       <b-row>
@@ -88,7 +86,7 @@
         <b-col>Nom client:</b-col><b-col>{{ form.nomClient }}</b-col>
       </b-row>
       <b-row>
-        <b-table :items="produits" :fields="infoFields" hover>
+        <b-table :items="form.ligneCommandes" :fields="infoFields" hover>
           <template #cell(total)="row">
             {{ row.item.prix * row.item.quantite }}
           </template>
@@ -104,157 +102,240 @@
       </b-row>
     </b-modal>
 
-    <b-modal
-      id="commande"
-      ref="commande"
-      :title="titre"
-      @show="resetModal"
-      ok-disabled
-      cancel-disabled
-    >
-      <b-form ref="form" @submit.stop.prevent="handleSubmit">
-        <b-form-row>
-          <b-form-group label="Statut" label-for="Statut">
-            <b-form-radio-group
-              id="statut"
-              name="statut"
-              v-model="form.statut"
-              :disabled="mode === 'del'"
-              required
+    <ValidationObserver ref="observer" v-slot="{ handleSubmit }">
+      <b-form ref="form" @submit.stop.prevent="handleSubmit(enregister)">
+        <b-modal
+          id="commande"
+          ref="commande"
+          :title="titre"
+          @show="resetModal"
+          ok-disabled
+          cancel-disabled
+        >
+          <b-form-row>
+            <b-form-group label="Statut" label-for="Statut">
+              <ValidationProvider
+                name="vstatut"
+                v-slot="validationContext"
+                :rules="{required: true}"
+              >
+                <b-form-radio-group
+                  id="statut"
+                  name="statut"
+                  v-model="form.statut"
+                  :disabled="mode === 'del'"
+                >
+                  <b-form-radio value="PREPARATION">Préparation</b-form-radio>
+                  <b-form-radio value="EXPEDIEE">Expédiée</b-form-radio>
+                  <b-form-radio value="LIVREE">Livrée</b-form-radio>
+                </b-form-radio-group>
+                <b-form-invalid-feedback id="input-1-live-feedback">{{
+                  validationContext.errors[0]
+                }}</b-form-invalid-feedback>
+              </ValidationProvider>
+            </b-form-group>
+          </b-form-row>
+
+          <b-form-row>
+            <b-form-group label="Date de commande" label-for="Date de commande">
+              <ValidationProvider
+                name="vdate"
+                v-slot="validationContext"
+                :rules="{required: true}"
+              >
+              <b-form-datepicker
+                id="datepicker-dateformat2"
+                v-model="form.dateCommande"
+                :date-format-options="{
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                }"
+                locale="fr"
+                :disabled="mode === 'del'"
+              ></b-form-datepicker>
+              <b-form-invalid-feedback id="input-1-live-feedback">{{
+                  validationContext.errors[0]
+                }}</b-form-invalid-feedback>
+              </ValidationProvider>
+            </b-form-group>
+            </validation-provider>
+          </b-form-row>
+
+          <b-form-row>
+            <b-form-group
+              label="Numéro de commande"
+              label-for="Numéro de commande"
             >
-              <b-form-radio value="ENPREPARATION">Préparation</b-form-radio>
-              <b-form-radio value="EXPEDIEE">Expédiée</b-form-radio>
-              <b-form-radio value="LIVREE">Livrée</b-form-radio>
-            </b-form-radio-group>
-          </b-form-group>
-        </b-form-row>
+            <ValidationProvider
+                name="vnumero"
+                v-slot="validationContext"
+                :rules="{required: true, max: 14, regex: /^[A-Z]{2}\w{12}$/}"
+              >
+              <b-form-input
+                id="numero"
+                name="numero"
+                v-model="form.numero"
+                required
+                :disabled="mode === 'del' || mode === 'modif'"
+              ></b-form-input>
+               <b-form-invalid-feedback id="input-1-live-feedback">{{
+                  validationContext.errors[0]
+                }}</b-form-invalid-feedback>
+            </ValidationProvider>
+            </b-form-group>
+          </b-form-row>
 
-        <b-form-row>
-          <b-form-group label="Date de commande" label-for="Date de commande">
-            <label class="mt-3" for="datepicker-dateformat2"
-              >Date de commande</label
+          <b-form-row>
+            <b-form-group label="Nom client" label-for="Nom client">
+              <ValidationProvider
+                name="nomclient"
+                v-slot="validationContext"
+                :rules="{required: true, alpha_space: true, min:3, max: 100}"
+              >
+              <b-form-input
+                id="nom_client"
+                name="nom_client"
+                v-model="form.nomClient"
+                type="text"
+                maxlength="100"
+                required
+                :disabled="mode === 'del'"
+              ></b-form-input>
+              <b-form-invalid-feedback id="input-1-live-feedback">{{
+                  validationContext.errors[0]
+                }}</b-form-invalid-feedback>
+              </ValidationProvider>
+            </b-form-group>
+          </b-form-row>
+
+          <b-form-row>
+            <b-form-group label="email" label-for="adresse livraison">
+              <ValidationProvider
+                name="email"
+                v-slot="validationContext"
+                :rules="{required: true, email:true}"
+              >
+              <b-form-input
+                id="adresse_livaison"
+                name="adresse_livaison"
+                type="text"
+                maxlength="100"
+                v-model="form.email"
+                :disabled="mode === 'del'"
+                required
+              ></b-form-input>
+              <b-form-invalid-feedback id="input-1-live-feedback">{{
+                  validationContext.errors[0]
+                }}</b-form-invalid-feedback>
+              </ValidationProvider>
+            </b-form-group>
+          </b-form-row>
+
+          <b-form-row>
+            <b-form-group
+              label="adresse livraison"
+              label-for="adresse livraison"
             >
-            <b-form-datepicker
-              id="datepicker-dateformat2"
-              v-model="form.dateCommande"
-              :date-format-options="{
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-              }"
-              locale="fr"
-              :disabled="mode === 'del'"
-              required
-            ></b-form-datepicker>
-          </b-form-group>
-        </b-form-row>
+              <ValidationProvider
+                name="adresse1"
+                v-slot="validationContext"
+                :rules="{required: true, alpha_space: true, min:10, max:200}"
+              >
+              <b-form-input
+                id="adresse_livaison"
+                name="adresse_livaison"
+                type="text"
+                maxlength="100"
+                v-model="form.adresseLivraison1"
+                :disabled="mode === 'del'"
+                required
+              ></b-form-input>
+              <b-form-invalid-feedback id="input-1-live-feedback">{{
+                  validationContext.errors[0]
+                }}</b-form-invalid-feedback>
+              </ValidationProvider>
+            </b-form-group>
+          </b-form-row>
 
-        <b-form-row>
-          <b-form-group
-            label="Numéro de commande"
-            label-for="Numéro de commande"
-          >
-            <b-form-input
-              id="numero"
-              name="numero"
-              v-model="form.numero"
-              required
-              :disabled="mode === 'del'"
-            ></b-form-input>
-          </b-form-group>
-        </b-form-row>
+          <b-form-row>
+            <b-form-group
+              label="adresse complément"
+              label-for="adresse complément"
+            >
+            <ValidationProvider
+                name="adresse1"
+                v-slot="validationContext"
+                :rules="{required: true, alpha_space: true, min:10, max:200}"
+              >
+              <b-form-input
+                id="adresse_complement"
+                name="adresse_complement"
+                maxlength="100"
+                v-model="form.adresseLivraison2"
+                :disabled="mode === 'del'"
+              ></b-form-input>
+              <b-form-invalid-feedback id="input-1-live-feedback">{{
+                  validationContext.errors[0]
+                }}</b-form-invalid-feedback>
+              </ValidationProvider>
+            </b-form-group>
+          </b-form-row>
 
-        <b-form-row>
-          <b-form-group label="Nom client" label-for="Nom client">
-            <b-form-input
-              id="nom_client"
-              name="nom_client"
-              v-model="form.nomClient"
-              type="text"
-              maxlength="100"
-              required
-              :disabled="mode === 'del'"
-            ></b-form-input>
-          </b-form-group>
-        </b-form-row>
+          <b-form-row>
+            <b-form-group label="ville livraison" label-for="ville livraison">
+              <ValidationProvider
+                name="adresse1"
+                v-slot="validationContext"
+                :rules="{required: true, alpha_space: true, min:10, max:200}"
+              >
+              <b-form-input
+                id="ville"
+                name="ville_livraison"
+                v-model="form.villeLivraison"
+                maxlength="50"
+                required
+                :disabled="mode === 'del'"
+              ></b-form-input>
+              <b-form-invalid-feedback id="input-1-live-feedback">{{
+                  validationContext.errors[0]
+                }}</b-form-invalid-feedback>
+              </ValidationProvider>
+            </b-form-group>
+          </b-form-row>
 
-        <b-form-row>
-          <b-form-group label="Prénom client" label-for="Prénom client">
-            <b-form-input
-              id="prenom_client"
-              name="prenom_client"
-              type="text"
-              v-model="form.prenomClient"
-              maxlength="50"
-              required
-              :disabled="mode === 'del'"
-            ></b-form-input>
-          </b-form-group>
-        </b-form-row>
-
-        <b-form-row>
-          <b-form-group label="adresse livraison" label-for="adresse livraison">
-            <b-form-input
-              id="adresse_livaison"
-              name="adresse_livaison"
-              type="text"
-              maxlength="100"
-              v-model="form.adresseLivraison1"
-              :disabled="mode === 'del'"
-              required
-            ></b-form-input>
-          </b-form-group>
-        </b-form-row>
-
-        <b-form-row>
-          <b-form-group
-            label="adresse complément"
-            label-for="adresse complément"
-          >
-            <b-form-input
-              id="adresse_complement"
-              name="adresse_complement"
-              maxlength="100"
-              v-model="form.adresseLivraison2"
-              :disabled="mode === 'del'"
-            ></b-form-input>
-          </b-form-group>
-        </b-form-row>
-
-        <b-form-row>
-          <b-form-group label="ville livraison" label-for="ville livraison">
-            <b-form-input
-              id="ville"
-              name="ville_livraison"
-              v-model="form.ville"
-              maxlength="50"
-              required
-              :disabled="mode === 'del'"
-            ></b-form-input>
-          </b-form-group>
-        </b-form-row>
-
-        <b-form-row>
-          <b-form-group label="code postal" label-for="code postal">
-            <b-form-input
-              id="code_postal"
-              name="code_postal"
-              type="number"
-              maxlength="5"
-              v-model="form.codePostal"
-              required
-              :disabled="mode === 'del'"
-            ></b-form-input>
-          </b-form-group>
-        </b-form-row>
+          <b-form-row>
+            <b-form-group label="code postal" label-for="code postal">
+              <ValidationProvider
+                name="adresse1"
+                v-slot="validationContext"
+                :rules="{required: true, integer: true, min:5, max:5}"
+              >
+              <b-form-input
+                id="code_postal"
+                name="code_postal"
+                type="number"
+                maxlength="5"
+                v-model="form.codePostal"
+                :disabled="mode === 'del'"
+              ></b-form-input>
+              <b-form-invalid-feedback id="input-1-live-feedback">{{
+                  validationContext.errors[0]
+                }}</b-form-invalid-feedback>
+              </ValidationProvider>
+            </b-form-group>
+          </b-form-row>
+          <template #modal-footer>
+            <b-button-group>
+              <b-button type="submit" variant="warning" @click="enregister">{{
+                mode
+              }}</b-button>
+              <b-button variant="secondary" @click="annuler">Annuler</b-button>
+            </b-button-group>
+          </template>
+        </b-modal>
       </b-form>
-      <template #modal-footer>
-        <b-button-group>
-          <b-button type="submit" variant="warning">{{ mode }}</b-button>
-          <b-button variant="secondary" @click="annuler">Annuler</b-button>
-        </b-button-group>
-      </template>
-    </b-modal>
+    </ValidationObserver>
   </div>
 </template>
 
@@ -262,7 +343,8 @@
 // @ is an alias to /src
 
 import axios from "axios";
-import axiosVue from "axios-vue";
+import { ValidationObserver, ValidationProvider } from "vee-validate";
+import { regex } from "vee-validate/dist/rules";
 
 export default {
   name: "commande",
@@ -273,8 +355,8 @@ export default {
     return {
       deleteOk: false,
       produits: [],
-      total: 0.0,
-      moy: 0.0,
+      total: 0,
+      moy: 0,
       mode: "ajout",
       totalRows: 0,
       titre: "Ajouter commande",
@@ -315,10 +397,6 @@ export default {
           label: "Nom du client",
         },
         {
-          key: "prenomClient",
-          label: "Prenom du client",
-        },
-        {
           key: "actions",
           label: "Actions",
         },
@@ -338,6 +416,7 @@ export default {
         statut: "",
         numero: "",
         nomClient: "",
+        email: " ",
         prenomClient: "",
         adresseLivraison1: "",
         adresseLivraison2: "",
@@ -348,10 +427,13 @@ export default {
     };
   },
   methods: {
+    getValidationState({ dirty, validated, valid = null }) {
+      return dirty || validated ? valid : null;
+    },
     async getProduitCommande(numero) {
       await axios
         .get(`commande/produit/${numero}`)
-        .then((response) => (this.produits = response.data))
+        .then((response) => (this.form.ligneCommandes = response.data))
         .catch((error) => this.makeToast("Liste des produits vide", "Erreur"));
     },
     async getMoyCommande(numero) {
@@ -410,6 +492,7 @@ export default {
       this.titre = "Information sur commande";
       this.getProduitCommande(item.numero);
       this.getTotalCommande(item.numero);
+      this.getMoyCommande(item.numero);
       this.getOrderDelay(item.numero);
       this.$refs.information.show();
     },
@@ -424,8 +507,7 @@ export default {
       this.titre = "Effacer commande";
       this.getOneCommande(item.numero);
       this.getProduitCommande(item.numero);
-      this.getDeleteCommade(item.id);
-      //this.$refs.commande.show();
+      this.$refs.commande.show();
     },
     async getOneCommande(num) {
       if (num !== undefined) {
@@ -453,7 +535,7 @@ export default {
         })
         .catch((error) => this.makeToast(error, "Erreur"));
     },
-    async getDeleteCommade(id) {
+    async getDeleteCommande() {
       const { data } = await axios
         .delete(`commande/del/${this.form.id}`)
         .then((response) => {
@@ -471,7 +553,7 @@ export default {
       }
     },
     onFiltered() {},
-    enregistrer() {
+    add() {
       this.mode = "ajout";
       this.titre = "Ajouter commande";
       this.$refs.commande.show();
@@ -483,40 +565,21 @@ export default {
       this.resetModal();
       this.$refs.commande.hide();
     },
-    deleteMsgBox() {
-      this.$bvModal
-        .msgBoxConfirm("Suppression définitive?", {
-          title: "Confirmation?",
-          size: "sm",
-          buttonSize: "sm",
-          okVariant: "danger",
-          okTitle: "OUI",
-          cancelTitle: "NON",
-          hideHeaderClose: false,
-          centered: true,
-        })
-        .then((value) => {
-          this.deleteOk = value;
-        })
-        .catch((err) => {
-          // An error occurred
-        });
-    },
-    handleSubmit() {
+    enregister() {
       if (this.mode === "ajout") {
         this.getAddCommande();
       } else if (this.mode === "modif") {
         this.getModifCommande();
       } else if (this.mode === "del") {
-        this.getDeleteCommade();
+        this.getDeleteCommande();
       }
-      this.$refs.form.hide();
-      this.$refs.form.refresh();
-      this.annuler();
+      this.$refs.commande.hide();
       this.$nextTick(() => {
-        this.$refs.commande.hide();
+        this.$refs.form.hide();
       });
+      console.log("fin");
     },
   },
+  components: { ValidationObserver, ValidationProvider },
 };
 </script>
