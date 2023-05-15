@@ -71,7 +71,6 @@
         >Nouvelle commande</b-button
       >
     </b-row>
-
     <b-modal id="info" ref="information" title="Information" size="md" ok-only>
       <b-row>
         <b-col>Statut:</b-col><b-col>{{ form.statut }}</b-col>
@@ -88,18 +87,20 @@
       <b-row>
         <b-col>Nom client:</b-col><b-col>{{ form.nomClient }}</b-col>
       </b-row>
-      {{ form.ligneCommandes }}
       <b-row>
-        <b-table :items="form.ligneCommandes" :fields="infoFields" hover>
+        <b-table :items="produits" :fields="infoFields" hover>
           <template #cell(total)="row">
             {{ row.item.prix * row.item.quantite }}
           </template>
-          <template #foot(total)="row">
+          <template #foot(total)>
             <b>Total:{{ total }}</b
             ><br />
             <b>Moyenne:{{ moy }}</b>
           </template>
         </b-table>
+        <b>Total:{{ total }}</b
+        ><br />
+        <b>Moyenne:{{ moy }}</b>
       </b-row>
     </b-modal>
 
@@ -118,6 +119,7 @@
               id="statut"
               name="statut"
               v-model="form.statut"
+              :disabled="mode === 'del'"
               required
             >
               <b-form-radio value="ENPREPARATION">Préparation</b-form-radio>
@@ -141,6 +143,7 @@
                 day: '2-digit',
               }"
               locale="fr"
+              :disabled="mode === 'del'"
               required
             ></b-form-datepicker>
           </b-form-group>
@@ -156,6 +159,7 @@
               name="numero"
               v-model="form.numero"
               required
+              :disabled="mode === 'del'"
             ></b-form-input>
           </b-form-group>
         </b-form-row>
@@ -169,6 +173,7 @@
               type="text"
               maxlength="100"
               required
+              :disabled="mode === 'del'"
             ></b-form-input>
           </b-form-group>
         </b-form-row>
@@ -182,6 +187,7 @@
               v-model="form.prenomClient"
               maxlength="50"
               required
+              :disabled="mode === 'del'"
             ></b-form-input>
           </b-form-group>
         </b-form-row>
@@ -194,6 +200,7 @@
               type="text"
               maxlength="100"
               v-model="form.adresseLivraison1"
+              :disabled="mode === 'del'"
               required
             ></b-form-input>
           </b-form-group>
@@ -209,6 +216,7 @@
               name="adresse_complement"
               maxlength="100"
               v-model="form.adresseLivraison2"
+              :disabled="mode === 'del'"
             ></b-form-input>
           </b-form-group>
         </b-form-row>
@@ -221,6 +229,7 @@
               v-model="form.ville"
               maxlength="50"
               required
+              :disabled="mode === 'del'"
             ></b-form-input>
           </b-form-group>
         </b-form-row>
@@ -234,16 +243,17 @@
               maxlength="5"
               v-model="form.codePostal"
               required
+              :disabled="mode === 'del'"
             ></b-form-input>
           </b-form-group>
         </b-form-row>
-        <b-form-row>
-          <b-button-group>
-            <b-button type="submit" variant="warning">Enregister</b-button>
-            <b-button variant="secondary" @click="annuler">Annuler</b-button>
-          </b-button-group>
-        </b-form-row>
       </b-form>
+      <template #modal-footer>
+        <b-button-group>
+          <b-button type="submit" variant="warning">{{ mode }}</b-button>
+          <b-button variant="secondary" @click="annuler">Annuler</b-button>
+        </b-button-group>
+      </template>
     </b-modal>
   </div>
 </template>
@@ -261,7 +271,10 @@ export default {
   },
   data() {
     return {
+      deleteOk: false,
+      produits: [],
       total: 0.0,
+      moy: 0.0,
       mode: "ajout",
       totalRows: 0,
       titre: "Ajouter commande",
@@ -272,7 +285,7 @@ export default {
           label: "Id",
         },
         {
-          key: "nomProduit",
+          key: "produit",
           label: "Nom du produit",
         },
         {
@@ -305,10 +318,6 @@ export default {
           key: "prenomClient",
           label: "Prenom du client",
         },
-        // {
-        //   key: "produit",
-        //   label: "Produits",
-        // },
         {
           key: "actions",
           label: "Actions",
@@ -334,13 +343,27 @@ export default {
         adresseLivraison2: "",
         ville: "",
         codePostal: "",
+        ligneCommandes: [],
       },
     };
   },
   methods: {
+    async getProduitCommande(numero) {
+      await axios
+        .get(`commande/produit/${numero}`)
+        .then((response) => (this.produits = response.data))
+        .catch((error) => this.makeToast("Liste des produits vide", "Erreur"));
+    },
+    async getMoyCommande(numero) {
+      await axios
+        .get(`commande/moy/${numero}`)
+        .then((result) => (this.moy = result.data))
+        .catch((error) =>
+          this.makeToast("Imposible de calculer une moyenne", "Erreur")
+        );
+    },
     async getTotalCommande(numero) {
       let res = {};
-      console.log(numero);
       if (numero !== undefined || numero !== "") {
         res = await axios
           .get(`commande/total/${numero}`)
@@ -366,7 +389,7 @@ export default {
     },
     async getPage() {
       await axios
-        .get(`commande/page?no=${this.perPage}`)
+        .get("commande/page")
         .then((response) => {
           this.pages = response.data;
         })
@@ -383,13 +406,12 @@ export default {
       });
     },
     info(item, index, target) {
-      if (item !== undefined) {
-        this.getOneCommande(item.numero);
-        this.titre = "Information sur commande";
-        this.getTotalCommande(item.numero);
-        this.getOrderDelay(item.numero);
-        this.$refs.information.show();
-      }
+      this.form = item;
+      this.titre = "Information sur commande";
+      this.getProduitCommande(item.numero);
+      this.getTotalCommande(item.numero);
+      this.getOrderDelay(item.numero);
+      this.$refs.information.show();
     },
     modifier(item, index, target) {
       this.mode = "modif";
@@ -401,8 +423,9 @@ export default {
       this.mode = "del";
       this.titre = "Effacer commande";
       this.getOneCommande(item.numero);
+      this.getProduitCommande(item.numero);
       this.getDeleteCommade(item.id);
-      this.$refs.commande.show();
+      //this.$refs.commande.show();
     },
     async getOneCommande(num) {
       if (num !== undefined) {
@@ -443,9 +466,7 @@ export default {
       if (numero !== undefined) {
         const { data } = await axios
           .get(`commande/delay/${numero}`)
-          .then((response) => {
-            this.orderDelay = response.data;
-          })
+          .then((response) => (this.orderDelay = response.data))
           .catch((error) => this.makeToast(error, "getOrderDelay KO"));
       }
     },
@@ -462,6 +483,25 @@ export default {
       this.resetModal();
       this.$refs.commande.hide();
     },
+    deleteMsgBox() {
+      this.$bvModal
+        .msgBoxConfirm("Suppression définitive?", {
+          title: "Confirmation?",
+          size: "sm",
+          buttonSize: "sm",
+          okVariant: "danger",
+          okTitle: "OUI",
+          cancelTitle: "NON",
+          hideHeaderClose: false,
+          centered: true,
+        })
+        .then((value) => {
+          this.deleteOk = value;
+        })
+        .catch((err) => {
+          // An error occurred
+        });
+    },
     handleSubmit() {
       if (this.mode === "ajout") {
         this.getAddCommande();
@@ -470,7 +510,8 @@ export default {
       } else if (this.mode === "del") {
         this.getDeleteCommade();
       }
-      this.$refs.formulaire.refresh();
+      this.$refs.form.hide();
+      this.$refs.form.refresh();
       this.annuler();
       this.$nextTick(() => {
         this.$refs.commande.hide();

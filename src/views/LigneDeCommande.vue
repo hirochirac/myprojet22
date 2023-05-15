@@ -17,7 +17,7 @@
       @filtered="onFiltered"
     >
       <template #cell(numero)="row">
-        {{ row.item.numero }}
+        {{ row.item.commande.numero }}
       </template>
       <template #cell(actions)="row">
         <b-button
@@ -46,7 +46,7 @@
         </b-button>
       </template>
     </b-table>
-
+    {{ pages.content }}
     <b-row class="overflow-auto">
       <b-pagination
         ref="pagination"
@@ -64,14 +64,33 @@
     </b-row>
 
     <b-modal ref="info" size="xl" :title="mode">
-      <b-row> </b-row>
+      <b-row>
+        <b-col>Numero</b-col>
+        <b-col>{{ infoNumero }}</b-col>
+      </b-row>
+      <b-row>
+        <b-col>Produit</b-col>
+        <b-col>{{ infoProduit }}</b-col>
+      </b-row>
+      <b-row>
+        <b-col>Prix</b-col>
+        <b-col>{{ infoPrix }}</b-col>
+      </b-row>
+      <b-row>
+        <b-col>Quantite</b-col>
+        <b-col>{{ infoQuantite }}</b-col>
+      </b-row>
+      <b-row>
+        <b-col>Total</b-col>
+        <b-col>{{ infoQuantite * infoPrix }}</b-col>
+      </b-row>
     </b-modal>
 
     <b-form @submit.stop.prevent="handleSubmit">
       <b-modal ref="tablo" size="xl" :title="mode">
         <b-form-group label="Nom du produit" label-for="produit">
           <b-form-input
-            v-model="form.nomProduit"
+            v-model="form.produit"
             :min="3"
             :max="100"
             :disabled="mode == 'info' || mode == 'del'"
@@ -105,9 +124,7 @@
         </b-form-group>
         <template #modal-footer>
           <div v-if="mode !== 'info'">
-            <b-button type="submit" variant="warning" @click="enregistrer">{{
-              mode
-            }}</b-button>
+            <b-button type="submit" variant="warning">{{ mode }}</b-button>
           </div>
           <b-button type="submit" variant="primary" @click="annuler"
             >Annuler</b-button
@@ -124,6 +141,7 @@ import axios from "axios";
 export default {
   name: "ligne-de-commande",
   mounted() {
+    this.getPages();
     this.getAllCommande();
   },
   data() {
@@ -139,7 +157,7 @@ export default {
       infoPrix: 0.0,
       form: {
         id: -1,
-        nomProduit: "",
+        produit: "",
         prix: 0.0,
         quantite: 0,
         commande: {},
@@ -154,7 +172,7 @@ export default {
           label: "Numero",
         },
         {
-          key: "nomProduit",
+          key: "produit",
           label: "Produit",
         },
         {
@@ -210,33 +228,41 @@ export default {
     },
     enregistrer() {
       this.mode = "ajout";
-      if (this.commandeId !== undefined) {
-        this.$refs.tablo.show();
-      }
+      this.$refs.tablo.show();
     },
     modifier(item, index, evt) {
       this.mode = "modif";
-      this.form = item;
+      if (this.commandeId !== undefined) {
+        this.form = item;
+        this.commandeId = item.commande.numero;
+        this.$refs.tablo.show();
+      }
       this.$refs.tablo.show();
     },
     effacer(item, index, evt) {
       this.mode = "del";
+      this.form = item;
+      this.commandeId = item.commande.numero;
       this.$refs.tablo.show();
     },
     info(item, index, evt) {
-      this.infoNumero = this.commandeId;
-      this.infoProduit = item.nomProduit;
+      this.mode = "info";
+      this.infoNumero = item.commande.numero;
+      this.infoProduit = item.produit;
       this.infoPrix = item.prix;
       this.infoQuantite = item.quantite;
-      this.refs.info.show();
+      this.$refs.info.show();
     },
     async handleSubmit() {
       if (this.mode === "ajout") {
         await axios
-          .post("ligne/ajout/", this.form)
-          .then((response) =>
-            this.makeToast("Ajout d'un produit à une commande", "Réussite")
-          )
+          .post(`ligne/ajout/${commandeId}`, this.form)
+          .then((response) => {
+            this.getPages();
+            this.$refs.ligne.refresh();
+            this.$refs.tablo.hide();
+            this.makeToast("Ajout d'un produit à une commande", "Réussite");
+          })
           .catch((err) =>
             this.makeToast("Erreur ajout un produit à une commande", "Erreur")
           );
@@ -259,8 +285,6 @@ export default {
             this.makeToast("Erreur effacer un produit d'une commande", "Erreur")
           );
       }
-      this.getPages();
-      this.$refs.tablo.refresh();
     },
     onFiltered() {},
     makeToast(message, titre) {
