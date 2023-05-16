@@ -23,7 +23,7 @@
               <b-link class="nav-text nav-link" to="commande">Commandes</b-link>
             </li>
             <li class="nav-item">
-              <b-link class="nav-text nav-link" to="ligne" 
+              <b-link class="nav-text nav-link" to="ligne"
                 >Lignes de commande</b-link
               >
             </li>
@@ -51,22 +51,132 @@
               <a class="nav-link disabled">Disabled</a>
             </li>
           </ul>
-          <form class="d-flex">
+          <form class="d-flex" @submit.stop.prevent="chercher">
             <input
               class="form-control me-2"
               type="search"
               placeholder="Chercher"
               aria-label="Chercher"
+              v-model="rechercher"
             />
-            <button class="btn btn-primary" type="submit">Search</button>
+            <button class="btn btn-primary" type="submit" :max="100">
+              Search
+            </button>
           </form>
         </div>
       </div>
     </nav>
+    <b-modal id="recherche" ref="recherche" title="Recherche" ok-disabled>
+      <div class="container vertical-scrollable">
+        <b-row>
+          <b-table
+            ref="commande"
+            :items="pagesCommande"
+            :fields="commandefields"
+          >
+          </b-table>
+        </b-row>
+        <b-row>
+          <b-table
+            ref="ligne"
+            :items="pagesLigne"
+            :fields="lignefields"
+          ></b-table>
+          <template #cell(total)="row">
+            {{ row.item.prix * row.item.quantite }}
+          </template>
+        </b-row>
+      </div>
+    </b-modal>
   </header>
 </template>
 
 
 <script>
-export default {};
+import axios from "axios";
+export default {
+  name: "menubar",
+  data() {
+    return {
+      rechercher: "",
+      pagesLigne: [],
+      pagesCommande: [],
+      commande: {},
+      lignefields: [
+        {
+          key: "id",
+          label: "Id",
+        },
+        {
+          key: "produit",
+          label: "Nom du produit",
+        },
+        {
+          key: "prix",
+          label: "Prix",
+        },
+        {
+          key: "quantite",
+          label: "Quantite",
+        },
+        {
+          key: "total",
+          label: "Total",
+        },
+      ],
+      commandefields: [
+        {
+          key: "id",
+          label: "Id",
+        },
+        {
+          key: "numero",
+          label: "Numero",
+        },
+        {
+          key: "nomClient",
+          label: "Nom du client",
+        },
+      ],
+    };
+  },
+  methods: {
+    makeToast(message, titre) {
+      this.$bvToast.toast(`${message}`, {
+        title: titre,
+        variant: "danger",
+        autoHideDelay: 10000,
+        solid: true,
+      });
+    },
+    async getCommande() {
+      await axios
+        .get(`commande/fetch/${this.rechercher}`)
+        .then((reponse) => {
+          this.commande = reponse.data;
+          this.pagesCommande.push(this.commande);
+          this.getLigneCommande(this.commande.numero);
+        })
+        .catch((erreur) =>
+          this.makeToast("Données " + this.rechercher + " non trouvée")
+        );
+    },
+    async getLigneCommande(numero) {
+      await axios
+        .get(`commande/produit/${this.commande.numero}`)
+        .then((reponse) => {
+          this.pagesLigne = reponse.data;
+        })
+        .catch((erreur) =>
+          this.makeToast("Données " + this.rechercher + " non trouvée")
+        );
+    },
+    chercher() {
+      this.commande = {};
+      this.pagesCommande = [];
+      this.getCommande();
+      this.$refs.recherche.show();
+    },
+  },
+};
 </script>

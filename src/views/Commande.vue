@@ -191,7 +191,7 @@
               <ValidationProvider
                 name="nomclient"
                 v-slot="validationContext"
-                :rules="{required: true, alpha_space: true, min:3, max: 100}"
+                :rules="{required: true, alpha_spaces: true, min:3, max: 100}"
               >
               <b-form-input
                 id="nom_client"
@@ -240,7 +240,7 @@
               <ValidationProvider
                 name="adresse1"
                 v-slot="validationContext"
-                :rules="{required: true, alpha_space: true, min:10, max:200}"
+                :rules="{required: true, alpha_spaces: true, min:10, max:200}"
               >
               <b-form-input
                 id="adresse_livaison"
@@ -266,7 +266,7 @@
             <ValidationProvider
                 name="adresse1"
                 v-slot="validationContext"
-                :rules="{required: true, alpha_space: true, min:10, max:200}"
+                :rules="{required: true, alpha_spaces: true, min:10, max:200}"
               >
               <b-form-input
                 id="adresse_complement"
@@ -287,7 +287,7 @@
               <ValidationProvider
                 name="adresse1"
                 v-slot="validationContext"
-                :rules="{required: true, alpha_space: true, min:10, max:200}"
+                :rules="{required: true, alpha_spaces: true, min:10, max:200}"
               >
               <b-form-input
                 id="ville"
@@ -327,7 +327,7 @@
           </b-form-row>
           <template #modal-footer>
             <b-button-group>
-              <b-button type="submit" variant="warning" @click="enregister">{{
+              <b-button type="submit" variant="warning">{{
                 mode
               }}</b-button>
               <b-button variant="secondary" @click="annuler">Annuler</b-button>
@@ -479,10 +479,10 @@ export default {
       this.totalRows = this.pages.totalElements;
       this.items = this.pages.content;
     },
-    makeToast(message, titre) {
+    makeToast(message, titre, variant = "danger") {
       this.$bvToast.toast(`${message}`, {
         title: titre,
-        variant: "danger",
+        variant: variant,
         autoHideDelay: 10000,
         solid: true,
       });
@@ -547,16 +547,17 @@ export default {
           footerClass: "p-2",
           hideHeaderClose: false,
           centered: true,
-        }).then((value) => {
+        })
+        .then((value) => {
           axios
             .delete(`commande/del/${this.form.id}`)
             .then((response) => {
               this.getPage();
-              this.makeToast(response, "delete OK")
+              this.makeToast(response, "delete OK");
             })
             .catch((error) => this.makeToast(error, "delete KO"));
-        }).catch((error) => this.makeToast(response, "Suppression annulée"))
-
+        })
+        .catch((error) => this.makeToast(response, "Suppression annulée"));
     },
     async getOrderDelay(numero) {
       if (numero !== undefined) {

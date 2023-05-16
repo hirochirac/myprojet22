@@ -46,7 +46,6 @@
         </b-button>
       </template>
     </b-table>
-    {{ deleteOk }}
     <b-row class="overflow-auto">
       <b-pagination
         ref="pagination"
@@ -84,58 +83,106 @@
       </b-row>
     </b-modal>
 
-    <b-form @submit.stop.prevent="enregister">
-      <b-modal ref="tablo" size="xl" :title="mode">
-        <b-form-group label="Nom du produit" label-for="produit">
-          <b-form-input
-            v-model="form.produit"
-            :min="3"
-            :max="100"
-            :disabled="mode == 'info' || mode == 'del'"
-          ></b-form-input>
-        </b-form-group>
-        <b-form-group label="Prix" label-for="prix">
-          <b-form-input v-model="form.prix" :min="1" :max="5"></b-form-input>
-        </b-form-group>
-        <b-form-group label="Quantité" label-for="quantité">
-          <b-form-input
-            v-model="form.quantite"
-            :min="1"
-            :max="5"
-            :disabled="mode == 'info' || mode == 'del'"
-          ></b-form-input>
-        </b-form-group>
-        <b-form-group label="Commande:" label-for="commande">
-          <b-form-select
-            v-model="commandeId"
-            :options="commandes"
-            value-field="numero"
-            text-field="numero"
-            @change="getCommandeLigne()"
-            :disabled="mode == 'modif' || mode == 'info' || mode == 'del'"
-          >
-            <template #first>
-              <b-form-select-option :value="undefined" aria-selected="true"
-                >Veuillez choisir une commande</b-form-select-option
+    <ValidationObserver ref="observer" v-slot="{ handleSubmit }">
+      <b-form @submit.stop.prevent="handleSubmit(enregister)">
+        <b-modal ref="tablo" size="xl" :title="mode">
+          <b-form-group label="Nom du produit" label-for="produit">
+            <ValidationProvider
+              name="vproduit"
+              v-slot="validationContext"
+              :rules="{ required: true, alpha_spaces: true }"
+            >
+              <b-form-input
+                v-model="form.produit"
+                :min="3"
+                :max="100"
+                :disabled="mode == 'info' || mode == 'del'"
+              ></b-form-input>
+              <b-form-invalid-feedback id="input-1-live-feedback">{{
+                validationContext.errors[0]
+              }}</b-form-invalid-feedback>
+            </ValidationProvider>
+          </b-form-group>
+          <b-form-group label="Prix" label-for="prix">
+            <ValidationProvider
+              name="vquantite"
+              v-slot="validationContext"
+              :rules="{ required: true, number: true }"
+            >
+              <b-form-input
+                v-model="form.prix"
+                :min="1"
+                :max="5"
+              ></b-form-input>
+              <b-form-invalid-feedback id="input-1-live-feedback">{{
+                validationContext.errors[0]
+              }}</b-form-invalid-feedback>
+            </ValidationProvider>
+          </b-form-group>
+          <b-form-group label="Quantité" label-for="quantité">
+            <ValidationProvider
+              name="vquantite"
+              v-slot="validationContext"
+              :rules="{ required: true, number: true }"
+            >
+              <b-form-input
+                v-model="form.quantite"
+                :min="1"
+                :max="5"
+                :disabled="mode == 'info' || mode == 'del'"
+              ></b-form-input>
+              <b-form-invalid-feedback id="input-1-live-feedback">{{
+                validationContext.errors[0]
+              }}</b-form-invalid-feedback>
+            </ValidationProvider>
+          </b-form-group>
+          <b-form-group label="Commande:" label-for="commande">
+            <ValidationProvider
+              name="vcommande"
+              v-slot="validationContext"
+              :rules="{ required: true }"
+            >
+              <b-form-select
+                v-model="commandeId"
+                :options="commandes"
+                value-field="numero"
+                text-field="numero"
+                @change="getCommandeLigne()"
+                :disabled="mode == 'modif' || mode == 'info' || mode == 'del'"
               >
-            </template>
-          </b-form-select>
-        </b-form-group>
-        <template #modal-footer>
-          <b-button type="submit" variant="warning" @click="enregistrer">{{
-            mode
-          }}</b-button>
-          <b-button type="submit" variant="primary" @click="annuler"
-            >Annuler</b-button
-          >
-        </template>
-      </b-modal>
-    </b-form>
+                <template #first>
+                  <b-form-select-option :value="undefined" aria-selected="true"
+                    >Veuillez choisir une commande</b-form-select-option
+                  >
+                </template>
+              </b-form-select>
+              <b-form-invalid-feedback id="input-1-live-feedback">{{
+                validationContext.errors[0]
+              }}</b-form-invalid-feedback>
+            </ValidationProvider>
+          </b-form-group>
+          <template #modal-footer>
+            <button
+              class="btn btn-primary"
+              type="submit"
+              variant="warning"
+              @click="enregistrer"
+            >
+              {{ mode }}
+            </button>
+            <b-button type="submit" variant="primary" @click="annuler"
+              >Annuler</b-button
+            >
+          </template>
+        </b-modal>
+      </b-form>
+    </ValidationObserver>
   </div>
 </template>
 
 <script>
 import axios from "axios";
+import { alpha_spaces } from "vee-validate/dist/rules";
 
 export default {
   name: "ligne-de-commande",
@@ -232,9 +279,8 @@ export default {
                 this.makeToast(
                   "Erreur effacer un produit d'une commande",
                   "Erreur"
-                )
-              }
-              );
+                );
+              });
           } else {
             this.makeToast("Suppression annulée", "Info");
           }
