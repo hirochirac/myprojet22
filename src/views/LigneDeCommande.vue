@@ -46,7 +46,7 @@
         </b-button>
       </template>
     </b-table>
-    {{ form }}
+    {{ deleteOk }}
     <b-row class="overflow-auto">
       <b-pagination
         ref="pagination"
@@ -218,6 +218,26 @@ export default {
         })
         .then((value) => {
           this.deleteOk = value;
+          if (this.deleteOk === true) {
+            axios
+              .delete(`ligne/del/${this.form.id}`)
+              .then((response) => {
+                this.getPages();
+                this.$refs.ligne.refresh();
+                this.$refs.tablo.hide();
+                this.makeToast("effacer un produit d'une commande", "Réussite");
+              })
+              .catch((err) => {
+                this.$refs.tablo.hide();
+                this.makeToast(
+                  "Erreur effacer un produit d'une commande",
+                  "Erreur"
+                )
+              }
+              );
+          } else {
+            this.makeToast("Suppression annulée", "Info");
+          }
         })
         .catch((err) => {
           // An error occurred
@@ -341,7 +361,8 @@ export default {
       } else if (this.mode === "modif") {
         this.getModifProduit();
       } else if (this.mode == "del") {
-        this.getDelProduit();
+        //this.getDelProduit();
+        this.showMsgBoxTwo();
       }
     },
     onFiltered() {},

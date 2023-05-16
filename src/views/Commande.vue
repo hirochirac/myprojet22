@@ -536,13 +536,27 @@ export default {
         .catch((error) => this.makeToast(error, "Erreur"));
     },
     async getDeleteCommande() {
-      const { data } = await axios
-        .delete(`commande/del/${this.form.id}`)
-        .then((response) => {
-          this.getPage();
-          this.makeToast(response, "delete OK");
-        })
-        .catch((error) => this.makeToast(error, "delete KO"));
+      this.$bvModal
+        .msgBoxConfirm("Confirmez la suppression.", {
+          title: "Please Confirm",
+          size: "sm",
+          buttonSize: "sm",
+          okVariant: "danger",
+          okTitle: "oui",
+          cancelTitle: "non",
+          footerClass: "p-2",
+          hideHeaderClose: false,
+          centered: true,
+        }).then((value) => {
+          axios
+            .delete(`commande/del/${this.form.id}`)
+            .then((response) => {
+              this.getPage();
+              this.makeToast(response, "delete OK")
+            })
+            .catch((error) => this.makeToast(error, "delete KO"));
+        }).catch((error) => this.makeToast(response, "Suppression annulée"))
+
     },
     async getOrderDelay(numero) {
       if (numero !== undefined) {
