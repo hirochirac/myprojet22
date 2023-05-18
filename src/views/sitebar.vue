@@ -82,9 +82,6 @@
             :items="pagesLigne"
             :fields="lignefields"
           ></b-table>
-          <template #cell(total)="row">
-            {{ row.item.prix * row.item.quantite }}
-          </template>
         </b-row>
       </div>
     </b-modal>
@@ -118,10 +115,6 @@ export default {
         {
           key: "quantite",
           label: "Quantite",
-        },
-        {
-          key: "total",
-          label: "Total",
         },
       ],
       commandefields: [

@@ -1,6 +1,30 @@
 <template>
   <div>
     <b-row>
+      <b-form-group
+          label="Filter"
+          label-for="filter-input"
+          label-cols-sm="3"
+          label-align-sm="right"
+          label-size="sm"
+          class="mb-0"
+        >
+          <b-input-group size="sm">
+            <b-form-input
+              id="filter-input"
+              v-model="filtre"
+              type="search"
+              placeholder="Type to Search"
+              @change="filtering"
+            ></b-form-input>
+
+            <b-input-group-append>
+              <b-button :disabled="!filter" @click="filter = ''">Clear</b-button>
+            </b-input-group-append>
+          </b-input-group>
+        </b-form-group>
+    </b-row>
+    <b-row>
       <b-table
         ref="formulaire"
         :items="pages.content"
@@ -17,6 +41,7 @@
         small
         @filtered="onFiltered"
       >
+
         <template #cell(produit)="row">
           <b-button
             size="sm"
@@ -327,7 +352,7 @@
           </b-form-row>
           <template #modal-footer>
             <b-button-group>
-              <b-button type="submit" variant="warning">{{
+              <b-button type="submit" variant="warning" @click="enregister">{{
                 mode
               }}</b-button>
               <b-button variant="secondary" @click="annuler">Annuler</b-button>
@@ -353,6 +378,7 @@ export default {
   },
   data() {
     return {
+      filtre: "",
       deleteOk: false,
       produits: [],
       total: 0,
@@ -429,6 +455,9 @@ export default {
   methods: {
     getValidationState({ dirty, validated, valid = null }) {
       return dirty || validated ? valid : null;
+    },
+    async filtering() {
+      await axios.get(``).then().catch();
     },
     async getProduitCommande(numero) {
       await axios
