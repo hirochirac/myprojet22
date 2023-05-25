@@ -26,6 +26,11 @@ const routes = [
     path: '/',
     name: 'acceuil',
     component: Acceuil 
+  },
+  {
+    path: '/fetch/:target',
+    name: 'fetch',
+    component: Commande
   }
 ]
 

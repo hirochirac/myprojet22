@@ -2,27 +2,27 @@
   <div>
     <b-row>
       <b-form-group
-          label="Filter"
-          label-for="filter-input"
-          label-cols-sm="3"
-          label-align-sm="right"
-          label-size="sm"
-          class="mb-0"
-        >
-          <b-input-group size="sm">
-            <b-form-input
-              id="filter-input"
-              v-model="filtre"
-              type="search"
-              placeholder="Type to Search"
-              @change="filtering"
-            ></b-form-input>
+        label="Filter"
+        label-for="filter-input"
+        label-cols-sm="3"
+        label-align-sm="right"
+        label-size="sm"
+        class="mb-0"
+      >
+        <b-input-group size="sm">
+          <b-form-input
+            id="filter-input"
+            v-model="filtre"
+            type="search"
+            placeholder="Type to Search"
+            @change="filtering"
+          ></b-form-input>
 
-            <b-input-group-append>
-              <b-button :disabled="!filter" @click="filter = ''">Clear</b-button>
-            </b-input-group-append>
-          </b-input-group>
-        </b-form-group>
+          <b-input-group-append>
+            <b-button :disabled="!filter" @click="filter = ''">Clear</b-button>
+          </b-input-group-append>
+        </b-input-group>
+      </b-form-group>
     </b-row>
     <b-row>
       <b-table
@@ -41,7 +41,6 @@
         small
         @filtered="onFiltered"
       >
-
         <template #cell(produit)="row">
           <b-button
             size="sm"
@@ -92,6 +91,7 @@
       </b-row>
     </b-row>
     <b-row>
+      {{ this.$router.params }}
       <b-button variant="success" @click="add">Nouvelle commande</b-button>
     </b-row>
     <b-modal id="info" ref="information" title="Information" size="md" ok-only>
@@ -142,7 +142,7 @@
               <ValidationProvider
                 name="vstatut"
                 v-slot="validationContext"
-                :rules="{required: true}"
+                :rules="{ required: true }"
               >
                 <b-form-radio-group
                   id="statut"
@@ -166,25 +166,24 @@
               <ValidationProvider
                 name="vdate"
                 v-slot="validationContext"
-                :rules="{required: true}"
+                :rules="{ required: true }"
               >
-              <b-form-datepicker
-                id="datepicker-dateformat2"
-                v-model="form.dateCommande"
-                :date-format-options="{
-                  year: 'numeric',
-                  month: '2-digit',
-                  day: '2-digit',
-                }"
-                locale="fr"
-                :disabled="mode === 'del'"
-              ></b-form-datepicker>
-              <b-form-invalid-feedback id="input-1-live-feedback">{{
+                <b-form-datepicker
+                  id="datepicker-dateformat2"
+                  v-model="form.dateCommande"
+                  :date-format-options="{
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                  }"
+                  locale="fr"
+                  :disabled="mode === 'del'"
+                ></b-form-datepicker>
+                <b-form-invalid-feedback id="input-1-live-feedback">{{
                   validationContext.errors[0]
                 }}</b-form-invalid-feedback>
               </ValidationProvider>
             </b-form-group>
-            </validation-provider>
           </b-form-row>
 
           <b-form-row>
@@ -192,22 +191,22 @@
               label="Numéro de commande"
               label-for="Numéro de commande"
             >
-            <ValidationProvider
+              <ValidationProvider
                 name="vnumero"
                 v-slot="validationContext"
-                :rules="{required: true, max: 14, regex: /^[A-Z]{2}\w{12}$/}"
+                :rules="{ required: true, max: 14, regex: /^[A-Z]{2}\w{12}$/ }"
               >
-              <b-form-input
-                id="numero"
-                name="numero"
-                v-model="form.numero"
-                required
-                :disabled="mode === 'del' || mode === 'modif'"
-              ></b-form-input>
-               <b-form-invalid-feedback id="input-1-live-feedback">{{
+                <b-form-input
+                  id="numero"
+                  name="numero"
+                  v-model="form.numero"
+                  required
+                  :disabled="mode === 'del' || mode === 'modif'"
+                ></b-form-input>
+                <b-form-invalid-feedback id="input-1-live-feedback">{{
                   validationContext.errors[0]
                 }}</b-form-invalid-feedback>
-            </ValidationProvider>
+              </ValidationProvider>
             </b-form-group>
           </b-form-row>
 
@@ -216,18 +215,23 @@
               <ValidationProvider
                 name="nomclient"
                 v-slot="validationContext"
-                :rules="{required: true, alpha_spaces: true, min:3, max: 100}"
+                :rules="{
+                  required: true,
+                  alpha_spaces: true,
+                  min: 3,
+                  max: 100,
+                }"
               >
-              <b-form-input
-                id="nom_client"
-                name="nom_client"
-                v-model="form.nomClient"
-                type="text"
-                maxlength="100"
-                required
-                :disabled="mode === 'del'"
-              ></b-form-input>
-              <b-form-invalid-feedback id="input-1-live-feedback">{{
+                <b-form-input
+                  id="nom_client"
+                  name="nom_client"
+                  v-model="form.nomClient"
+                  type="text"
+                  maxlength="100"
+                  required
+                  :disabled="mode === 'del'"
+                ></b-form-input>
+                <b-form-invalid-feedback id="input-1-live-feedback">{{
                   validationContext.errors[0]
                 }}</b-form-invalid-feedback>
               </ValidationProvider>
@@ -239,18 +243,18 @@
               <ValidationProvider
                 name="email"
                 v-slot="validationContext"
-                :rules="{required: true, email:true}"
+                :rules="{ required: true, email: true }"
               >
-              <b-form-input
-                id="adresse_livaison"
-                name="adresse_livaison"
-                type="text"
-                maxlength="100"
-                v-model="form.email"
-                :disabled="mode === 'del'"
-                required
-              ></b-form-input>
-              <b-form-invalid-feedback id="input-1-live-feedback">{{
+                <b-form-input
+                  id="adresse_livaison"
+                  name="adresse_livaison"
+                  type="text"
+                  maxlength="100"
+                  v-model="form.email"
+                  :disabled="mode === 'del'"
+                  required
+                ></b-form-input>
+                <b-form-invalid-feedback id="input-1-live-feedback">{{
                   validationContext.errors[0]
                 }}</b-form-invalid-feedback>
               </ValidationProvider>
@@ -265,18 +269,23 @@
               <ValidationProvider
                 name="adresse1"
                 v-slot="validationContext"
-                :rules="{required: true, alpha_spaces: true, min:10, max:200}"
+                :rules="{
+                  required: true,
+                  alpha_spaces: true,
+                  min: 10,
+                  max: 200,
+                }"
               >
-              <b-form-input
-                id="adresse_livaison"
-                name="adresse_livaison"
-                type="text"
-                maxlength="100"
-                v-model="form.adresseLivraison1"
-                :disabled="mode === 'del'"
-                required
-              ></b-form-input>
-              <b-form-invalid-feedback id="input-1-live-feedback">{{
+                <b-form-input
+                  id="adresse_livaison"
+                  name="adresse_livaison"
+                  type="text"
+                  maxlength="100"
+                  v-model="form.adresseLivraison1"
+                  :disabled="mode === 'del'"
+                  required
+                ></b-form-input>
+                <b-form-invalid-feedback id="input-1-live-feedback">{{
                   validationContext.errors[0]
                 }}</b-form-invalid-feedback>
               </ValidationProvider>
@@ -288,19 +297,24 @@
               label="adresse complément"
               label-for="adresse complément"
             >
-            <ValidationProvider
+              <ValidationProvider
                 name="adresse1"
                 v-slot="validationContext"
-                :rules="{required: true, alpha_spaces: true, min:10, max:200}"
+                :rules="{
+                  required: true,
+                  alpha_spaces: true,
+                  min: 10,
+                  max: 200,
+                }"
               >
-              <b-form-input
-                id="adresse_complement"
-                name="adresse_complement"
-                maxlength="100"
-                v-model="form.adresseLivraison2"
-                :disabled="mode === 'del'"
-              ></b-form-input>
-              <b-form-invalid-feedback id="input-1-live-feedback">{{
+                <b-form-input
+                  id="adresse_complement"
+                  name="adresse_complement"
+                  maxlength="100"
+                  v-model="form.adresseLivraison2"
+                  :disabled="mode === 'del'"
+                ></b-form-input>
+                <b-form-invalid-feedback id="input-1-live-feedback">{{
                   validationContext.errors[0]
                 }}</b-form-invalid-feedback>
               </ValidationProvider>
@@ -312,17 +326,22 @@
               <ValidationProvider
                 name="adresse1"
                 v-slot="validationContext"
-                :rules="{required: true, alpha_spaces: true, min:10, max:200}"
+                :rules="{
+                  required: true,
+                  alpha_spaces: true,
+                  min: 10,
+                  max: 200,
+                }"
               >
-              <b-form-input
-                id="ville"
-                name="ville_livraison"
-                v-model="form.villeLivraison"
-                maxlength="50"
-                required
-                :disabled="mode === 'del'"
-              ></b-form-input>
-              <b-form-invalid-feedback id="input-1-live-feedback">{{
+                <b-form-input
+                  id="ville"
+                  name="ville_livraison"
+                  v-model="form.villeLivraison"
+                  maxlength="50"
+                  required
+                  :disabled="mode === 'del'"
+                ></b-form-input>
+                <b-form-invalid-feedback id="input-1-live-feedback">{{
                   validationContext.errors[0]
                 }}</b-form-invalid-feedback>
               </ValidationProvider>
@@ -334,17 +353,17 @@
               <ValidationProvider
                 name="adresse1"
                 v-slot="validationContext"
-                :rules="{required: true, integer: true, min:5, max:5}"
+                :rules="{ required: true, integer: true, min: 5, max: 5 }"
               >
-              <b-form-input
-                id="code_postal"
-                name="code_postal"
-                type="number"
-                maxlength="5"
-                v-model="form.codePostal"
-                :disabled="mode === 'del'"
-              ></b-form-input>
-              <b-form-invalid-feedback id="input-1-live-feedback">{{
+                <b-form-input
+                  id="code_postal"
+                  name="code_postal"
+                  type="number"
+                  maxlength="5"
+                  v-model="form.codePostal"
+                  :disabled="mode === 'del'"
+                ></b-form-input>
+                <b-form-invalid-feedback id="input-1-live-feedback">{{
                   validationContext.errors[0]
                 }}</b-form-invalid-feedback>
               </ValidationProvider>
@@ -499,6 +518,8 @@ export default {
       this.items = this.pages.content;
     },
     async getPage() {
+      //let target = this.$router.params;
+      //console.log(target);
       await axios
         .get("commande/page")
         .then((response) => {

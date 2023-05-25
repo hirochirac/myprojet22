@@ -57,7 +57,7 @@
               type="search"
               placeholder="Chercher"
               aria-label="Chercher"
-              v-model="rechercher"
+              v-model="target"
             />
             <button class="btn btn-primary" type="submit" :max="100">
               Search
@@ -66,25 +66,6 @@
         </div>
       </div>
     </nav>
-    <b-modal id="recherche" ref="recherche" title="Recherche" ok-disabled>
-      <div class="container vertical-scrollable">
-        <b-row>
-          <b-table
-            ref="commande"
-            :items="pagesCommande"
-            :fields="commandefields"
-          >
-          </b-table>
-        </b-row>
-        <b-row>
-          <b-table
-            ref="ligne"
-            :items="pagesLigne"
-            :fields="lignefields"
-          ></b-table>
-        </b-row>
-      </div>
-    </b-modal>
   </header>
 </template>
 
@@ -95,42 +76,7 @@ export default {
   name: "menubar",
   data() {
     return {
-      rechercher: "",
-      pagesLigne: [],
-      pagesCommande: [],
-      commande: {},
-      lignefields: [
-        {
-          key: "id",
-          label: "Id",
-        },
-        {
-          key: "produit",
-          label: "Nom du produit",
-        },
-        {
-          key: "prix",
-          label: "Prix",
-        },
-        {
-          key: "quantite",
-          label: "Quantite",
-        },
-      ],
-      commandefields: [
-        {
-          key: "id",
-          label: "Id",
-        },
-        {
-          key: "numero",
-          label: "Numero",
-        },
-        {
-          key: "nomClient",
-          label: "Nom du client",
-        },
-      ],
+      target: "",
     };
   },
   methods: {
@@ -165,10 +111,9 @@ export default {
         );
     },
     chercher() {
-      this.commande = {};
-      this.pagesCommande = [];
-      this.getCommande();
-      this.$refs.recherche.show();
+      this.$router.push({
+        path: `/fetch/${this.target}`,
+      });
     },
   },
 };
