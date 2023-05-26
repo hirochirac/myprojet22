@@ -112,7 +112,7 @@ export default {
     },
     chercher() {
       this.$router.push({
-        path: `/fetch/${this.target}`,
+        path: `/commande/${this.target}`,
       });
     },
   },

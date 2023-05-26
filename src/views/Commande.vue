@@ -27,7 +27,7 @@
     <b-row>
       <b-table
         ref="formulaire"
-        :items="pages.content"
+        :items="items"
         :fields="fields"
         :current-page="currentPage"
         :per-page="perPage"
@@ -90,8 +90,8 @@
         </b-pagination>
       </b-row>
     </b-row>
+    {{ cible }}
     <b-row>
-      {{ this.$router.params }}
       <b-button variant="success" @click="add">Nouvelle commande</b-button>
     </b-row>
     <b-modal id="info" ref="information" title="Information" size="md" ok-only>
@@ -395,8 +395,18 @@ export default {
   mounted() {
     this.getPage();
   },
+  watch: {
+    "$route.params": function (params) {
+      this.cible = params.target;
+      console.log(this.cible);
+      if (this.cible !== undefined) {
+        this.getCible();
+      }
+    },
+  },
   data() {
     return {
+      cible: undefined,
       filtre: "",
       deleteOk: false,
       produits: [],
@@ -517,17 +527,26 @@ export default {
       this.totalRows = this.pages.totalElements;
       this.items = this.pages.content;
     },
+    async getCible() {
+      console.log("debut");
+      await axios
+        .get(`commande/fetch/${this.cible}`)
+        .then((response) => {
+          this.items = response.data;
+        })
+        .catch((error) => this.makeToast(error, "Erreur"));
+      this.cible = undefined;
+      console.log("fin");
+    },
     async getPage() {
-      //let target = this.$router.params;
-      //console.log(target);
       await axios
         .get("commande/page")
         .then((response) => {
           this.pages = response.data;
+          this.items = this.pages.content;
         })
         .catch((error) => this.makeToast(error, "Erreur"));
       this.totalRows = this.pages.totalElements;
-      this.items = this.pages.content;
     },
     makeToast(message, titre, variant = "danger") {
       this.$bvToast.toast(`${message}`, {
